@@ -1,4 +1,4 @@
-[발표 자료 열기](docs/index.html)
+[발표 자료 HTML 다운로드](https://github.com/IntelliPolis/IntelliPolis-AI-Urban-Planner/raw/refs/heads/main/docs/index.html?download=)
 
 발표용 html 올렸습니다.
 
