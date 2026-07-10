@@ -1,0 +1,20 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: intellipolis-backend
+  ai:
+    # 키가 없는 기본 개발 환경에서는 자동 구성을 끄고 fallback을 사용합니다.
+    # Gemini 사용 시 SPRING_AI_MODEL_CHAT=google-genai를 함께 설정하세요.
+    model:
+      chat: ${SPRING_AI_MODEL_CHAT:none}
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY:}
+        chat:
+          model: ${GEMINI_MODEL:gemini-3.1-flash-lite}
+
+app:
+  cors:
+    allowed-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
