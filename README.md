@@ -1,6 +1,6 @@
 [발표 자료 HTML 다운로드](https://github.com/IntelliPolis/IntelliPolis-AI-Urban-Planner/raw/refs/heads/main/docs/index.html?download=)
 
-발표용 html 올렸습니다.
+발표용 html 올렸습니다. 클릭 후 컨트롤 s 하시고 열람 부탁드립니다.
 
 # IntelliPolis-AI-Urban-Planner
 
