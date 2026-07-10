@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>IntelliPolis | AI 도시계획 의사결정 지원</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --background: #07111f;
+      --surface: rgba(15, 30, 50, 0.78);
+      --surface-light: rgba(255, 255, 255, 0.07);
+      --border: rgba(255, 255, 255, 0.12);
+      --primary: #45b8ff;
+      --primary-light: #8ed8ff;
+      --green: #52d19a;
+      --orange: #ffad62;
+      --purple: #b18cff;
+      --text: #f4f8fc;
+      --muted: #9dafc3;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      min-height: 100vh;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(69, 184, 255, 0.17), transparent 30%),
+        radial-gradient(circle at 90% 85%, rgba(82, 209, 154, 0.12), transparent 30%),
+        var(--background);
+      color: var(--text);
+      font-family:
+        Pretendard,
+        "Noto Sans KR",
+        Arial,
+        sans-serif;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      opacity: 0.2;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(to bottom, black, transparent 90%);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .container {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    /* Header */
+
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(7, 17, 31, 0.76);
+      backdrop-filter: blur(18px);
+    }
+
+    .navigation {
+      min-height: 72px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 21px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-symbol {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(69, 184, 255, 0.5);
+      border-radius: 11px;
+      background: linear-gradient(
+        145deg,
+        rgba(69, 184, 255, 0.22),
+        rgba(82, 209, 154, 0.1)
+      );
+      color: var(--primary-light);
+      box-shadow: 0 0 30px rgba(69, 184, 255, 0.12);
+    }
+
+    .logo span {
+      color: var(--primary);
+    }
+
+    .nav-menu {
+      display: flex;
+      gap: 28px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .nav-menu a {
+      transition: 0.2s;
+    }
+
+    .nav-menu a:hover {
+      color: var(--text);
+    }
+
+    /* Hero */
+
+    .hero {
+      position: relative;
+      min-height: calc(100vh - 72px);
+      display: grid;
+      align-items: center;
+      padding: 90px 0;
+    }
+
+    .hero-content {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      align-items: center;
+      gap: 70px;
+    }
+
+    .badge {
+      width: fit-content;
+      margin-bottom: 24px;
+      padding: 9px 14px;
+      border: 1px solid rgba(69, 184, 255, 0.27);
+      border-radius: 999px;
+      background: rgba(69, 184, 255, 0.08);
+      color: var(--primary-light);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+    }
+
+    .hero h1 {
+      max-width: 760px;
+      margin-bottom: 24px;
+      font-size: clamp(48px, 7vw, 82px);
+      line-height: 1.04;
+      letter-spacing: -4px;
+    }
+
+    .hero h1 strong {
+      display: block;
+      background: linear-gradient(
+        90deg,
+        var(--primary-light),
+        var(--green)
+      );
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero-description {
+      max-width: 700px;
+      color: var(--muted);
+      font-size: 19px;
+      line-height: 1.8;
+      word-break: keep-all;
+    }
+
+    .hero-description strong {
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 34px;
+    }
+
+    .button {
+      min-height: 50px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 22px;
+      border: 1px solid transparent;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 700;
+      transition: 0.2s ease;
+    }
+
+    .button-primary {
+      background: var(--primary);
+      color: #04101d;
+      box-shadow: 0 14px 35px rgba(69, 184, 255, 0.22);
+    }
+
+    .button-primary:hover {
+      transform: translateY(-2px);
+      background: var(--primary-light);
+    }
+
+    .button-secondary {
+      border-color: var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+    }
+
+    .button-secondary:hover {
+      border-color: rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    /* City visual */
+
+    .city-visual {
+      position: relative;
+      min-height: 480px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      border: 1px solid var(--border);
+      border-radius: 28px;
+      overflow: hidden;
+      background:
+        linear-gradient(to bottom, rgba(69, 184, 255, 0.08), transparent 45%),
+        rgba(9, 24, 40, 0.72);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, 0.28);
+    }
+
+    .city-visual::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(69, 184, 255, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(69, 184, 255, 0.08) 1px, transparent 1px);
+      background-size: 32px 32px;
+      transform: perspective(500px) rotateX(58deg) scale(1.7);
+      transform-origin: bottom;
+      opacity: 0.7;
+    }
+
+    .skyline {
+      position: relative;
+      z-index: 2;
+      width: 86%;
+      height: 65%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 8px;
+      padding-bottom: 55px;
+    }
+
+    .building {
+      position: relative;
+      width: 12%;
+      border: 1px solid rgba(142, 216, 255, 0.4);
+      border-bottom: 0;
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          transparent 0,
+          transparent 12px,
+          rgba(142, 216, 255, 0.12) 13px,
+          rgba(142, 216, 255, 0.12) 15px
+        ),
+        linear-gradient(
+          to top,
+          rgba(69, 184, 255, 0.18),
+          rgba(69, 184, 255, 0.04)
+        );
+      box-shadow: 0 0 30px rgba(69, 184, 255, 0.08);
+    }
+
+    .building:nth-child(1) {
+      height: 40%;
+    }
+
+    .building:nth-child(2) {
+      height: 62%;
+    }
+
+    .building:nth-child(3) {
+      height: 48%;
+    }
+
+    .building:nth-child(4) {
+      height: 88%;
+    }
+
+    .building:nth-child(5) {
+      height: 68%;
+    }
+
+    .building:nth-child(6) {
+      height: 52%;
+    }
+
+    .building:nth-child(7) {
+      height: 76%;
+    }
+
+    .building::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: -12px;
+      width: 130%;
+      height: 14px;
+      transform: translateX(-50%);
+      background: rgba(69, 184, 255, 0.16);
+      filter: blur(8px);
+    }
+
+    .visual-label {
+      position: absolute;
+      z-index: 3;
+      padding: 10px 14px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(7, 17, 31, 0.88);
+      color: var(--muted);
+      font-size: 12px;
+      backdrop-filter: blur(10px);
+    }
+
+    .visual-label strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .label-traffic {
+      top: 52px;
+      left: 35px;
+    }
+
+    .label-environment {
+      top: 145px;
+      right: 30px;
+    }
+
+    .label-economy {
+      right: 42px;
+      bottom: 42px;
+    }
+
+    .pulse {
+      position: absolute;
+      z-index: 4;
+      top: 50%;
+      left: 52%;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow:
+        0 0 0 10px rgba(69, 184, 255, 0.12),
+        0 0 35px rgba(69, 184, 255, 0.8);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%,
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+
+      50% {
+        transform: scale(1.4);
+        opacity: 0.65;
+      }
+    }
+
+    /* Main sections */
+
+    .section {
+      padding: 100px 0;
+    }
+
+    .section-header {
+      max-width: 730px;
+      margin-bottom: 42px;
+    }
+
+    .section-label {
+      margin-bottom: 13px;
+      color: var(--primary);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .section-title {
+      margin-bottom: 17px;
+      font-size: clamp(32px, 4vw, 48px);
+      line-height: 1.2;
+      letter-spacing: -1.8px;
+    }
+
+    .section-description {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.8;
+      word-break: keep-all;
+    }
+
+    /* Description card */
+
+    .project-definition {
+      padding: 40px;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background:
+        linear-gradient(
+          135deg,
+          rgba(69, 184, 255, 0.1),
+          rgba(82, 209, 154, 0.05)
+        ),
+        var(--surface);
+    }
+
+    .project-definition p {
+      font-size: clamp(20px, 3vw, 30px);
+      line-height: 1.75;
+      letter-spacing: -0.7px;
+      word-break: keep-all;
+    }
+
+    .project-definition .highlight {
+      color: var(--primary-light);
+      font-weight: 800;
+    }
+
+    /* Flow */
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 14px;
+    }
+
+    .flow-card {
+      position: relative;
+      min-height: 210px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: var(--surface);
+      transition: 0.25s ease;
+    }
+
+    .flow-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(69, 184, 255, 0.38);
+    }
+
+    .flow-number {
+      margin-bottom: 24px;
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .flow-card h3 {
+      margin-bottom: 12px;
+      font-size: 18px;
+    }
+
+    .flow-card p {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .flow-card:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      top: 50%;
+      right: -16px;
+      z-index: 3;
+      color: var(--primary);
+      font-size: 20px;
+      transform: translateY(-50%);
+    }
+
+    /* Agents */
+
+    .agent-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
+    .agent-card {
+      padding: 28px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--surface);
+    }
+
+    .agent-icon {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 24px;
+      border-radius: 13px;
+      background: var(--surface-light);
+      font-size: 21px;
+    }
+
+    .agent-card h3 {
+      margin-bottom: 10px;
+      font-size: 19px;
+    }
+
+    .agent-card p {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .agent-card:nth-child(1) {
+      border-top-color: var(--orange);
+    }
+
+    .agent-card:nth-child(2) {
+      border-top-color: var(--green);
+    }
+
+    .agent-card:nth-child(3) {
+      border-top-color: var(--purple);
+    }
+
+    .agent-card:nth-child(4) {
+      border-top-color: var(--primary);
+    }
+
+    /* Result */
+
+    .result-layout {
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 24px;
+    }
+
+    .score-panel,
+    .map-panel {
+      padding: 30px;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      background: var(--surface);
+    }
+
+    .panel-title {
+      margin-bottom: 25px;
+      font-size: 20px;
+    }
+
+    .score-item {
+      margin-bottom: 23px;
+    }
+
+    .score-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 9px;
+      font-size: 14px;
+    }
+
+    .score-info span:last-child {
+      color: var(--primary-light);
+      font-weight: 800;
+    }
+
+    .score-bar {
+      height: 8px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .score-value {
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--primary), var(--green));
+    }
+
+    .map-placeholder {
+      position: relative;
+      min-height: 350px;
+      overflow: hidden;
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at center, rgba(69, 184, 255, 0.15), transparent 30%),
+        #091727;
+    }
+
+    .map-placeholder::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0.65;
+      background-image:
+        linear-gradient(35deg, transparent 45%, rgba(69, 184, 255, 0.22) 46%, transparent 48%),
+        linear-gradient(-30deg, transparent 52%, rgba(82, 209, 154, 0.16) 53%, transparent 55%);
+      background-size: 110px 110px, 150px 150px;
+    }
+
+    .map-zone {
+      position: absolute;
+      border: 1px solid rgba(82, 209, 154, 0.65);
+      background: rgba(82, 209, 154, 0.12);
+      clip-path: polygon(15% 10%, 90% 0, 100% 70%, 65% 100%, 0 85%);
+    }
+
+    .map-zone.one {
+      top: 60px;
+      left: 70px;
+      width: 180px;
+      height: 120px;
+    }
+
+    .map-zone.two {
+      right: 55px;
+      bottom: 55px;
+      width: 190px;
+      height: 140px;
+      border-color: rgba(69, 184, 255, 0.7);
+      background: rgba(69, 184, 255, 0.12);
+    }
+
+    .map-marker {
+      position: absolute;
+      width: 15px;
+      height: 15px;
+      border: 3px solid #ffffff;
+      border-radius: 50%;
+      background: var(--orange);
+      box-shadow: 0 0 20px rgba(255, 173, 98, 0.8);
+    }
+
+    .marker-one {
+      top: 105px;
+      left: 160px;
+    }
+
+    .marker-two {
+      top: 185px;
+      right: 130px;
+      background: var(--green);
+    }
+
+    .marker-three {
+      right: 210px;
+      bottom: 75px;
+      background: var(--primary);
+    }
+
+    /* Tech */
+
+    .tech-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .tech-item {
+      padding: 13px 18px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    /* Footer */
+
+    .footer {
+      padding: 45px 0;
+      border-top: 1px solid var(--border);
+      color: var(--muted);
+      text-align: center;
+      font-size: 14px;
+    }
+
+    .footer strong {
+      color: var(--text);
+    }
+
+    @media (max-width: 1000px) {
+      .hero-content,
+      .result-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .hero {
+        padding: 70px 0;
+      }
+
+      .hero h1 {
+        letter-spacing: -2.5px;
+      }
+
+      .city-visual {
+        min-height: 420px;
+      }
+
+      .flow {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .flow-card:not(:last-child)::after {
+        display: none;
+      }
+
+      .agent-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 680px) {
+      .container {
+        width: min(100% - 28px, 1180px);
+      }
+
+      .nav-menu {
+        display: none;
+      }
+
+      .hero h1 {
+        font-size: 48px;
+      }
+
+      .hero-description {
+        font-size: 17px;
+      }
+
+      .city-visual {
+        min-height: 350px;
+      }
+
+      .visual-label {
+        display: none;
+      }
+
+      .section {
+        padding: 75px 0;
+      }
+
+      .project-definition {
+        padding: 27px;
+      }
+
+      .flow,
+      .agent-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-card {
+        min-height: auto;
+      }
+
+      .result-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="header">
+    <nav class="navigation container">
+      <a href="#" class="logo">
+        <span class="logo-symbol">IP</span>
+        Intelli<span>Polis</span>
+      </a>
+
+      <div class="nav-menu">
+        <a href="#project">프로젝트 소개</a>
+        <a href="#process">서비스 흐름</a>
+        <a href="#agents">AI 에이전트</a>
+        <a href="#result">결과 화면</a>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="hero-content container">
+        <div>
+          <div class="badge">AI URBAN PLANNING PLATFORM</div>
+
+          <h1>
+            더 나은 도시를
+            <strong>AI와 함께 설계하다.</strong>
+          </h1>
+
+          <p class="hero-description">
+            IntelliPolis는 도시계획 담당자와 시민을 위해
+            <strong>인구·교통·환경·시설 데이터를 분석</strong>하고,
+            Spring AI 기반 멀티 에이전트가 서로 다른 관점의 도시계획안을
+            제안하는 의사결정 지원 서비스입니다.
+          </p>
+
+          <div class="hero-actions">
+            <a class="button button-primary" href="#project">
+              프로젝트 살펴보기
+            </a>
+
+            <a class="button button-secondary" href="#process">
+              작동 방식 보기
+            </a>
+          </div>
+        </div>
+
+        <div class="city-visual">
+          <div class="visual-label label-traffic">
+            <strong>교통 분석</strong>
+            혼잡도 및 접근성
+          </div>
+
+          <div class="visual-label label-environment">
+            <strong>환경 분석</strong>
+            녹지와 생활환경
+          </div>
+
+          <div class="visual-label label-economy">
+            <strong>계획안 생성</strong>
+            예산과 효과 비교
+          </div>
+
+          <div class="pulse"></div>
+
+          <div class="skyline">
+            <div class="building"></div>
+            <div class="building"></div>
+            <div class="building"></div>
+            <div class="building"></div>
+            <div class="building"></div>
+            <div class="building"></div>
+            <div class="building"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="project">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-label">Project Definition</div>
+
+          <h2 class="section-title">우리 프로젝트는 무엇인가?</h2>
+
+          <p class="section-description">
+            IntelliPolis의 핵심 기능을 한 문장으로 정리했습니다.
+          </p>
+        </div>
+
+        <div class="project-definition">
+          <p>
+            우리 프로젝트는
+            <span class="highlight">도시계획 담당자와 지역 주민</span>을 위해
+            <span class="highlight">인구, 교통, 환경, 공공시설과 예산 데이터</span>를 받아
+            Spring AI가
+            <span class="highlight">
+              분야별 분석, 문제 분류, 개선안 추천과 계획안 생성
+            </span>
+            을 수행하고, 사용자에게
+            <span class="highlight">
+              지도 기반 도시계획 대안과 계획별 예상 효과
+            </span>
+            를 제공하는 서비스입니다.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="process">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-label">Service Process</div>
+
+          <h2 class="section-title">도시 데이터가 계획안이 되는 과정</h2>
+
+          <p class="section-description">
+            AI가 임의로 도시를 설계하지 않고, 입력 데이터와 규칙 기반 점수를
+            바탕으로 도시계획 대안을 생성합니다.
+          </p>
+        </div>
+
+        <div class="flow">
+          <article class="flow-card">
+            <div class="flow-number">STEP 01</div>
+            <h3>도시 데이터 입력</h3>
+            <p>
+              인구, 공원 비율, 병원 수, 교통 접근성, 예산 등의 데이터를 입력합니다.
+            </p>
+          </article>
+
+          <article class="flow-card">
+            <div class="flow-number">STEP 02</div>
+            <h3>현재 상태 계산</h3>
+            <p>
+              Java 기반 규칙 계산기가 교통, 환경, 경제, 생활 점수를 계산합니다.
+            </p>
+          </article>
+
+          <article class="flow-card">
+            <div class="flow-number">STEP 03</div>
+            <h3>AI 분야별 분석</h3>
+            <p>
+              교통, 환경, 경제, 생활 에이전트가 각자의 관점에서 문제를 분석합니다.
+            </p>
+          </article>
+
+          <article class="flow-card">
+            <div class="flow-number">STEP 04</div>
+            <h3>계획안 생성</h3>
+            <p>
+              균형형, 환경 중심형, 예산 효율형의 도시계획 대안을 생성합니다.
+            </p>
+          </article>
+
+          <article class="flow-card">
+            <div class="flow-number">STEP 05</div>
+            <h3>지도 시각화</h3>
+            <p>
+              제안 시설, 교통 노선과 개발 구역을 지도 위에서 비교합니다.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="agents">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-label">Multi Agent</div>
+
+          <h2 class="section-title">분야별 AI 전문가 협업</h2>
+
+          <p class="section-description">
+            하나의 Gemini API를 사용하지만, 서로 다른 역할의 시스템 프롬프트로
+            다양한 관점을 분석합니다.
+          </p>
+        </div>
+
+        <div class="agent-grid">
+          <article class="agent-card">
+            <div class="agent-icon">🚦</div>
+            <h3>교통 에이전트</h3>
+            <p>
+              혼잡 도로, 대중교통 접근성, 보행 환경과 이동 편의성을 분석합니다.
+            </p>
+          </article>
+
+          <article class="agent-card">
+            <div class="agent-icon">🌿</div>
+            <h3>환경 에이전트</h3>
+            <p>
+              공원 비율, 녹지 접근성, 보행 환경과 지속 가능한 개발 방향을 분석합니다.
+            </p>
+          </article>
+
+          <article class="agent-card">
+            <div class="agent-icon">₩</div>
+            <h3>경제 에이전트</h3>
+            <p>
+              사업 예산, 비용 대비 효과와 기존 시설 활용 가능성을 분석합니다.
+            </p>
+          </article>
+
+          <article class="agent-card">
+            <div class="agent-icon">🏥</div>
+            <h3>생활 에이전트</h3>
+            <p>
+              병원, 학교, 문화시설과 연령별 주민의 생활 편의성을 분석합니다.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="result">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-label">Expected Result</div>
+
+          <h2 class="section-title">점수와 지도로 비교하는 도시계획</h2>
+
+          <p class="section-description">
+            사용자는 현재 도시와 AI 계획안의 예상 점수를 비교하고,
+            제안된 시설과 개발 구역을 지도에서 확인할 수 있습니다.
+          </p>
+        </div>
+
+        <div class="result-layout">
+          <div class="score-panel">
+            <h3 class="panel-title">AI 계획안 예상 점수</h3>
+
+            <div class="score-item">
+              <div class="score-info">
+                <span>교통</span>
+                <span>84점</span>
+              </div>
+              <div class="score-bar">
+                <div class="score-value" style="width: 84%"></div>
+              </div>
+            </div>
+
+            <div class="score-item">
+              <div class="score-info">
+                <span>환경</span>
+                <span>91점</span>
+              </div>
+              <div class="score-bar">
+                <div class="score-value" style="width: 91%"></div>
+              </div>
+            </div>
+
+            <div class="score-item">
+              <div class="score-info">
+                <span>경제</span>
+                <span>76점</span>
+              </div>
+              <div class="score-bar">
+                <div class="score-value" style="width: 76%"></div>
+              </div>
+            </div>
+
+            <div class="score-item">
+              <div class="score-info">
+                <span>생활</span>
+                <span>88점</span>
+              </div>
+              <div class="score-bar">
+                <div class="score-value" style="width: 88%"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="map-panel">
+            <h3 class="panel-title">지도 기반 계획안 미리보기</h3>
+
+            <div class="map-placeholder">
+              <div class="map-zone one"></div>
+              <div class="map-zone two"></div>
+
+              <div class="map-marker marker-one"></div>
+              <div class="map-marker marker-two"></div>
+              <div class="map-marker marker-three"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-header">
+          <div class="section-label">Technology Stack</div>
+          <h2 class="section-title">사용 기술</h2>
+        </div>
+
+        <div class="tech-list">
+          <div class="tech-item">Spring Boot</div>
+          <div class="tech-item">Spring AI</div>
+          <div class="tech-item">Gemini 3.1 Flash-Lite</div>
+          <div class="tech-item">React</div>
+          <div class="tech-item">TypeScript</div>
+          <div class="tech-item">MapLibre GL JS</div>
+          <div class="tech-item">MySQL · Optional</div>
+          <div class="tech-item">GeoJSON</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <strong>IntelliPolis</strong>
+      · Intelligence와 Polis를 결합한 AI 도시계획 의사결정 지원 플랫폼
+    </div>
+  </footer>
+</body>
+</html>
