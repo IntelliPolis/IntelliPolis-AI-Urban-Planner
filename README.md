@@ -1,3 +1,5 @@
+[발표 자료 열기](docs/index.html)
+
 발표용 html 올렸습니다.
 
 # IntelliPolis-AI-Urban-Planner
