@@ -68,5 +68,5 @@
 
 ## 다이어그램
 
-- [유스케이스 다이어그램](diagrams/use-case.svg)
-- [도시 분석 시퀀스 다이어그램](diagrams/analysis-sequence.svg)
+- ![유스케이스 다이어그램](diagrams/use-case.svg)
+- ![도시 분석 시퀀스 다이어그램](diagrams/analysis-sequence.svg)
