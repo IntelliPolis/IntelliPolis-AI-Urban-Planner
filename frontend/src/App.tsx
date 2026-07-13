@@ -1,150 +1,35 @@
-"use client";
-
-import { useState } from "react";
-
-const plans = [
-  { code: "BALANCED", label: "균형형", score: 84, tone: "교통·환경·생활의 조화" },
-  { code: "ECO_FOCUSED", label: "환경 중심형", score: 88, tone: "녹지와 보행 경험 강화" },
-  { code: "COST_EFFECTIVE", label: "예산 효율형", score: 81, tone: "기존 인프라를 현명하게 활용" },
-];
-
-const scores = [
-  ["교통", 70], ["환경", 65], ["경제", 80], ["생활", 72],
-];
-
-export default function Home() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState(0);
-  const [view3d, setView3d] = useState(true);
-
-  const scrollTo = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
-    setMenuOpen(false);
-  };
-
-  return (
-    <main>
-      <header className="nav-shell">
-        <button className="brand" onClick={() => scrollTo("home")} aria-label="홈으로 이동">
-          <span className="brand-mark"><i /><i /><i /></span>
-          <span>INTELLI<span>POLIS</span></span>
-        </button>
-        <button className="menu-button" onClick={() => setMenuOpen(!menuOpen)} aria-label="메뉴 열기">☰</button>
-        <nav className={menuOpen ? "open" : ""}>
-          <button onClick={() => scrollTo("about")}>플랫폼 소개</button>
-          <button onClick={() => scrollTo("process")}>분석 과정</button>
-          <button onClick={() => scrollTo("dashboard")}>대시보드</button>
-          <button onClick={() => scrollTo("plans")}>계획안 비교</button>
-        </nav>
-        <button className="nav-cta" onClick={() => scrollTo("dashboard")}>도시 분석 시작</button>
-      </header>
-
-      <section className="hero" id="home">
-        <div className="hero-copy">
-          <div className="eyebrow"><span /> AI URBAN DECISION SUPPORT</div>
-          <h1>도시의 가능성을<br /><em>더 현명하게 설계합니다.</em></h1>
-          <p>교통·환경·경제·생활 데이터를 하나의 시선으로 분석하고,<br className="desktop" /> AI와 함께 현실적인 도시계획 대안을 비교하세요.</p>
-          <div className="hero-actions">
-            <button className="primary" onClick={() => scrollTo("dashboard")}>새 도시 분석 시작 <span>↗</span></button>
-            <button className="text-link" onClick={() => scrollTo("about")}>서비스 살펴보기 <span>→</span></button>
-          </div>
-          <div className="trust-row">
-            <div><strong>4</strong><span>전문 분석 관점</span></div>
-            <div><strong>3</strong><span>도시계획 대안</span></div>
-            <div><strong>100%</strong><span>설명 가능한 비교</span></div>
-          </div>
-        </div>
-        <div className="hero-visual" aria-label="미래 스마트시티 조감도">
-          <div className="image-glow" />
-          <img
-            src="/intellipolis-hero.png"
-            alt="흰색과 금색으로 설계된 미래 스마트시티"
-          />
-          <div className="float-card card-one"><span className="pulse" /><b>도시 종합 점수</b><strong>72</strong><small>현재 분석 기준</small></div>
-          <div className="float-card card-two"><span>AI INSIGHT</span><b>녹지 접근성 개선</b><small>우선 검토가 필요합니다</small></div>
-          <div className="gold-line line-a" /><div className="gold-line line-b" />
-        </div>
-        <div className="scroll-cue"><span />SCROLL TO EXPLORE</div>
-      </section>
-
-      <section className="intro section" id="about">
-        <div className="section-kicker">WHY INTELLIPOLIS</div>
-        <div className="section-heading">
-          <h2>AI의 제안과 데이터의 근거를<br />하나의 화면에서.</h2>
-          <p>IntelliPolis는 행정 결정을 대신하지 않습니다. 다양한 관점의 대안을 투명하게 비교하고 더 나은 선택을 검토하도록 돕습니다.</p>
-        </div>
-        <div className="feature-grid">
-          {[
-            ["01", "다각도 도시 분석", "교통, 환경, 경제, 생활 편의 데이터를 분야별 관점으로 해석합니다."],
-            ["02", "검증 가능한 점수", "객관적인 수치는 Java 규칙 엔진이 계산하고 AI는 그 의미를 설명합니다."],
-            ["03", "지도 기반 계획", "시설, 도로, 개발 구역을 지도에서 직관적으로 확인하고 비교합니다."],
-          ].map(([n, title, desc]) => <article className="feature-card" key={n}><span>{n}</span><div className="feature-icon">{n === "01" ? "⌁" : n === "02" ? "◫" : "⌖"}</div><h3>{title}</h3><p>{desc}</p><i /></article>)}
-        </div>
-      </section>
-
-      <section className="process section" id="process">
-        <div className="process-copy">
-          <div className="section-kicker">HOW IT WORKS</div>
-          <h2>복잡한 도시 데이터를<br />명확한 계획으로.</h2>
-          <p>입력부터 대안 비교까지, 모든 분석 과정이 자연스럽게 연결됩니다.</p>
-        </div>
-        <div className="steps">
-          {["도시 데이터 입력", "분야별 AI 분석", "계획안 3개 생성", "지도에서 비교"].map((step, i) => <div className="step" key={step}><span>0{i + 1}</span><b>{step}</b>{i < 3 && <i>→</i>}</div>)}
-        </div>
-      </section>
-
-      <section className="dashboard-section" id="dashboard">
-        <div className="dashboard-title">
-          <div><div className="section-kicker">LIVE DASHBOARD PREVIEW</div><h2>가상 해안구 도시 분석</h2></div>
-          <div className="status"><span /> 샘플 데이터 연결됨</div>
-        </div>
-        <div className="dashboard-grid">
-          <aside className="score-panel panel">
-            <p className="panel-label">CURRENT CITY SCORE</p>
-            <div className="overall-score"><strong>72</strong><span>/ 100</span></div>
-            <small>현재 도시 종합 점수</small>
-            <div className="score-list">
-              {scores.map(([label, score]) => <div key={label}><span>{label}</span><i><b style={{ width: `${score}%` }} /></i><strong>{score}</strong></div>)}
-            </div>
-            <button onClick={() => scrollTo("plans")}>세부 분석 결과 보기 <span>→</span></button>
-          </aside>
-          <div className="map-panel panel">
-            <div className="map-top"><div><span>INTELLIPOLIS MAP</span><b>가상 해안구 · 부산광역시</b></div><button onClick={() => setView3d(!view3d)}><span className={!view3d ? "active" : ""}>2D</span><span className={view3d ? "active" : ""}>3D</span></button></div>
-            <div className={`map-art ${view3d ? "is-3d" : ""}`}>
-              <div className="water" /><div className="road road-a" /><div className="road road-b" />
-              {[1,2,3,4,5,6,7,8,9].map(n => <i className={`building b${n}`} key={n} />)}
-              <span className="pin park">♧<small>신규 녹지</small></span><span className="pin transit">⌁<small>환승 거점</small></span><span className="zone">개발 검토 구역</span>
-            </div>
-            <div className="map-legend"><span><i className="green" />공원</span><span><i className="gold" />교통</span><span><i className="blue" />개발구역</span></div>
-          </div>
-          <aside className="insight-panel panel">
-            <p className="panel-label">AI AGENT INSIGHTS</p>
-            {[
-              ["교통", "중앙로 혼잡 분산을 위한 대중교통 연결 강화가 필요합니다."],
-              ["환경", "서부 생활권의 공원 접근성이 상대적으로 낮습니다."],
-              ["생활", "고령 인구를 고려한 의료 접근성 개선을 권장합니다."],
-            ].map(([tag, text], i) => <article key={tag}><span className={`agent a${i}`}>{tag}</span><p>{text}</p><small>AI 분석 결과 · 참고용</small></article>)}
-          </aside>
-        </div>
-      </section>
-
-      <section className="plans section" id="plans">
-        <div className="section-kicker">COMPARE THE FUTURE</div>
-        <div className="section-heading"><h2>세 가지 가능성,<br />더 나은 하나의 선택.</h2><p>각 계획안을 선택해 예상 종합 점수와 핵심 방향을 비교해보세요.</p></div>
-        <div className="plan-tabs">
-          {plans.map((plan, i) => <button className={selectedPlan === i ? "active" : ""} onClick={() => setSelectedPlan(i)} key={plan.code}><span>0{i+1}</span><b>{plan.label}</b><small>{plan.code}</small></button>)}
-        </div>
-        <div className="plan-result">
-          <div><span>EXPECTED OVERALL SCORE</span><strong>{plans[selectedPlan].score}<small>/100</small></strong></div>
-          <div><h3>{plans[selectedPlan].label} 도시계획안</h3><p>{plans[selectedPlan].tone}</p><ul><li>지역 여건과 우선 목표를 함께 반영</li><li>예산 범위 안에서 단계적 개선 제안</li><li>계획 시설과 개발 후보를 지도에 표시</li></ul></div>
-          <button>이 계획안 자세히 보기 <span>↗</span></button>
-        </div>
-      </section>
-
-      <section className="closing">
-        <div><span>DESIGNING SMARTER CITIES WITH AI</span><h2>도시의 다음 장면을<br />함께 설계해보세요.</h2><button onClick={() => scrollTo("home")}>프로젝트 시작하기 <span>↗</span></button></div>
-      </section>
-      <footer><button className="brand" onClick={() => scrollTo("home")}><span className="brand-mark"><i /><i /><i /></span><span>INTELLI<span>POLIS</span></span></button><p>AI 기반 도시계획 의사결정 지원 플랫폼</p><small>© 2026 Team IntelliPolis. For simulation and decision support only.</small></footer>
-    </main>
-  );
+import {useEffect,useRef,useState} from "react";
+import type {CSSProperties} from "react";
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
+import "./map-enhancements.css";
+import "./traffic.css";
+import type {CityAnalysisRequest,CityPlan,PlannedFacility} from "./types/city";
+const API=import.meta.env.VITE_API_BASE_URL||"http://localhost:8080";
+type Regions=Record<string,string[]>;
+type TrafficSummary={measuredLinkCount:number;averageSpeedKmh:number;congestedLinkCount:number;congestedRoads:{linkId:string;roadName:string;speedKmh:number}[];warnings:string[]};
+type SpatialSummary={eligibleParcelCount:number;nearbyPlanningFacilityCount:number;candidates:{parcelId:string;longitude:number;latitude:number;areaM2:number;distanceM:number}[];warnings:string[]};
+type DistrictBoundary={cityName:string;districtName:string;type:"Polygon"|"MultiPolygon";coordinates:any;bounds:[number,number,number,number]};
+type Summary={cityName:string;districtName:string;businessCount:number;parkCount:number;totalParkAreaM2:number;schoolCount:number|null;busStopCount:number|null;budgetByCategory:Record<string,number>;warnings:string[];traffic?:TrafficSummary;spatial?:SpatialSummary;boundary?:DistrictBoundary};
+async function json<T>(url:string,init?:RequestInit):Promise<T>{const r=await fetch(url,init);if(!r.ok)throw new Error((await r.json().catch(()=>({}))).message||`요청 실패 (${r.status})`);return r.json()}
+export default function App(){
+ const[regions,setRegions]=useState<Regions>({}),[city,setCity]=useState(""),[district,setDistrict]=useState("");
+ const[data,setData]=useState<Summary>(),[plans,setPlans]=useState<CityPlan[]>([]),[selected,setSelected]=useState(0),[center,setCenter]=useState<[number,number]>([127.0475,37.5176]);
+ const[loading,setLoading]=useState(true),[error,setError]=useState("");
+ useEffect(()=>{json<Regions>(`${API}/api/urban-data/regions`).then(x=>{setRegions(x);const c=Object.keys(x)[0]||"";setCity(c);setDistrict(x[c]?.[0]||"")}).catch(e=>setError(e.message)).finally(()=>setLoading(false))},[]);
+ const analyze=async()=>{setLoading(true);setError("");try{const summary=await json<Summary>(`${API}/api/urban-data/summary?city=${encodeURIComponent(city)}&district=${encodeURIComponent(district)}`);const boundary=await json<DistrictBoundary>(`${API}/api/spatial/boundary?city=${encodeURIComponent(city)}&district=${encodeURIComponent(district)}`).catch(()=>undefined);const location=await json<any>(`${API}/api/vworld/search?query=${encodeURIComponent(`${city} ${district}`)}`).catch(()=>undefined);const point=location?.response?.result?.items?.[0]?.point;const fallback=boundary?[(boundary.bounds[0]+boundary.bounds[2])/2,(boundary.bounds[1]+boundary.bounds[3])/2] as [number,number]:center;const c:[number,number]=point?[Number(point.x),Number(point.y)]:fallback;const budget=Object.values(summary.budgetByCategory).reduce((a,b)=>a+b,0);const traffic=await json<TrafficSummary>(`${API}/api/traffic/summary?city=${encodeURIComponent(city)}&district=${encodeURIComponent(district)}&longitude=${c[0]}&latitude=${c[1]}`).catch(()=>undefined);const spatial=await json<SpatialSummary>(`${API}/api/spatial/candidates?city=${encodeURIComponent(city)}&district=${encodeURIComponent(district)}&longitude=${c[0]}&latitude=${c[1]}`).catch(()=>undefined);const candidate=spatial?.candidates[0];const request:CityAnalysisRequest={cityName:city,districtName:district,population:0,areaKm2:50,elderlyRatio:0,youthRatio:0,parkAreaRatio:Math.min(100,summary.totalParkAreaM2/500000),hospitalCount:0,schoolCount:summary.schoolCount||0,transitHubCount:summary.busStopCount||0,averageHospitalDistanceKm:0,averageParkDistanceKm:0,averageTransitDistanceKm:0,congestedRoads:traffic?.congestedRoads.map(x=>x.roadName).filter((x,i,a)=>a.indexOf(x)===i).slice(0,20)||[],totalBudget:budget,priorityGoals:["교통 접근성 개선","녹지 접근성 향상"],mapCenter:{longitude:candidate?.longitude||c[0],latitude:candidate?.latitude||c[1]},boundary:[]};const analysis=await json<{plans:CityPlan[]}>(`${API}/api/city-analyses`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(request)});setData({...summary,traffic,spatial,boundary});setCenter(c);setPlans(analysis.plans||[]);setSelected(0)}catch(e){setError(e instanceof Error?e.message:"도시 분석에 실패했습니다.")}finally{setLoading(false)}};
+ return <><header className="nav-shell"><div className="brand"><span className="brand-mark"><i/><i/><i/></span><span>INTELLI<span>POLIS</span></span></div><span className="nav-note">AI URBAN DECISION SUPPORT</span></header><main className="live-app"><section className="live-head"><div><p>VIRTUAL CITY LAB</p><h1>현재 도시와 AI 계획안을<br/><em>한눈에 비교합니다.</em></h1></div><div className="selectors"><label>시·광역시<select value={city} onChange={e=>{setCity(e.target.value);setDistrict(regions[e.target.value]?.[0]||"");setData(undefined)}}>{Object.keys(regions).map(x=><option key={x}>{x}</option>)}</select></label><label>구·군<select value={district} onChange={e=>{setDistrict(e.target.value);setData(undefined)}}>{(regions[city]||[]).map(x=><option key={x}>{x}</option>)}</select></label><button disabled={!district||loading} onClick={analyze}>{loading?"분석 중...":"도시 분석 시작 →"}</button></div>{error&&<p className="live-error">{error}</p>}</section>{data?<Dashboard data={data} center={center} plans={plans} selected={selected} onSelect={setSelected}/>:<section className="empty-live"><b>지역을 선택하고 도시 분석을 시작하세요.</b><span>VWorld 지역 좌표의 실제 지도 위에 AI 계획 시설을 강조합니다.</span></section>}</main></>}
+function Dashboard({data,center,plans,selected,onSelect}:{data:Summary;center:[number,number];plans:CityPlan[];selected:number;onSelect:(i:number)=>void}){const plan=plans[selected]||null;return <><section className="metric-row"><Metric label="상가·상권" value={`${data.businessCount.toLocaleString()}개`}/><Metric label="도시공원" value={`${data.parkCount.toLocaleString()}개`}/><Metric label="평균 통행속도" value={data.traffic?`${data.traffic.averageSpeedKmh}km/h`:"자료 없음"}/><Metric label="혼잡 링크" value={data.traffic?`${data.traffic.congestedLinkCount}개`:"자료 없음"}/></section><div className="plan-picker">{plans.map((p,i)=><button className={selected===i?"active":""} key={p.planType} onClick={()=>onSelect(i)}>{p.name}</button>)}</div><section className="map-compare"><MapView center={center} boundary={data.boundary} plan={null} title={`${data.districtName} 현재 배치`}/><MapView center={center} boundary={data.boundary} plan={plan} title={`${data.districtName} AI 개선 · ${plan?.name||""}`}/></section>{data.traffic&&<section className="traffic-review"><small>LIVE TRAFFIC REVIEW</small><h2>교통 혼잡 후보</h2>{data.traffic.congestedRoads.length?data.traffic.congestedRoads.slice(0,8).map(x=><p key={x.linkId}><b>{x.roadName}</b><span>{x.speedKmh}km/h · 링크 {x.linkId}</span></p>):<p>현재 조회 범위에 20km/h 미만 혼잡 링크가 없습니다.</p>}</section>}{plan&&<PlanDetails plan={plan}/>}<section className="agent-explanation"><small>MULTI-AGENT REVIEW</small><h2>분야별 검토 의견</h2><div><p><b>교통</b> ITS 실측 속도에서 20km/h 미만 링크를 혼잡 후보로 반영했습니다. 지도 연결축은 검토안이며 실제 신설은 필지·계획시설 검토가 필요합니다.</p><p><b>환경</b> 공원 수와 면적을 바탕으로 녹지 연결 가능성을 검토합니다.</p><p><b>경제</b> 기존 상권을 훼손하지 않고 생활 서비스 거점을 연계하는 방향입니다.</p><p><b>생활</b> 병원·학교·인구 API 값이 없는 항목은 생성하지 않고 미수집 상태로 둡니다.</p></div></section>{data.warnings.length>0&&<section className="live-warnings"><b>데이터 한계</b>{data.warnings.map(x=><span key={x}>{x}</span>)}</section>}</>}
+function PlanDetails({plan}:{plan:CityPlan}){return <section className="plan-details"><div><small>PLAN RATIONALE</small><h2>{plan.name}</h2><p>{plan.purpose}</p></div><dl><div><dt>신규 시설</dt><dd>{plan.facilities.length}개</dd></div><div><dt>연결 도로</dt><dd>{plan.roads.length}개</dd></div><div><dt>개발 구역</dt><dd>{plan.zones.length}개</dd></div></dl><div><b>배치 이유</b>{plan.facilities.map(x=><p key={x.id}>{x.name} — {x.reason}</p>)}{plan.roads.map(x=><p key={x.id}>{x.name} — {x.reason}</p>)}<b>기대 효과</b><p>{plan.benefits.join(", ")}</p><b>주의사항</b><p>{plan.tradeOffs.join(", ")}</p></div></section>}
+function Metric({label,value}:{label:string;value:string}){return <article><span>{label}</span><strong>{value}</strong></article>}
+const facilityVisual=(f:PlannedFacility)=>({
+ HOSPITAL:["병원","🏥","#df4e5b"],PARK:["공원","🌳","#2e9d68"],SCHOOL:["학교","🏫","#4c78d0"],
+ TRANSIT_HUB:["교통","🚉","#e07832"],CULTURE:["문화","🎭","#8b63c7"],PUBLIC_SERVICE:["공공","🏛️","#3b7d84"]
+}[f.facilityType]||["시설","●","#d2a93f"]);
+function MapView({center,boundary,plan,title}:{center:[number,number];boundary?:DistrictBoundary;plan:CityPlan|null;title:string}){
+ const host=useRef<HTMLDivElement>(null),[is3d,set3d]=useState(true);
+ const facilities=plan?.facilities.filter(f=>f.longitude!=null&&f.latitude!=null)||[];
+ // @ts-expect-error MapLibre는 런타임 2D/3D 레이어 전환의 판별 유니온을 추론하지 못한다.
+ useEffect(()=>{if(!host.current)return;const markers:maplibregl.Marker[]=[];const district={type:"Feature",properties:{name:boundary?.districtName},geometry:boundary?{type:boundary.type,coordinates:boundary.coordinates}:null};const style:any={version:8,sources:{vworld:{type:"raster",tiles:[`${API}/api/vworld/tiles/{z}/{y}/{x}.png`],tileSize:256},openmaptiles:{type:"vector",url:"https://demotiles.maplibre.org/tiles/tiles.json"},district:{type:"geojson",data:district}},layers:[{id:"vworld",type:"raster",source:"vworld"},{id:"district-fill",type:"fill",source:"district",paint:{"fill-color":"#2563eb","fill-opacity":.1}},{id:"district-line",type:"line",source:"district",paint:{"line-color":"#2563eb","line-width":4,"line-opacity":.95}}]};const m=new maplibregl.Map({container:host.current,style,center,zoom:15.5,pitch:is3d?55:0,bearing:is3d?-15:0});if(boundary)m.fitBounds([[boundary.bounds[0],boundary.bounds[1]],[boundary.bounds[2],boundary.bounds[3]]],{padding:35,duration:0});m.addControl(new maplibregl.NavigationControl(),"top-right");m.on("load",()=>{m.addLayer({id:"existing-buildings",source:"openmaptiles","source-layer":"building",type:"fill-extrusion",paint:{"fill-extrusion-color":"#c7c4bb","fill-extrusion-height":["coalesce",["get","render_height"],12],"fill-extrusion-opacity":.72}});if(!plan)return;const features=facilities.map(f=>{const x=f.longitude!,y=f.latitude!,d=.00018;const [, ,color]=facilityVisual(f);return{type:"Feature",properties:{name:f.name,height:f.height&&f.height>0?f.height:35,color},geometry:{type:"Polygon",coordinates:[[[x-d,y-d],[x+d,y-d],[x+d,y+d],[x-d,y+d],[x-d,y-d]]]}}});m.addSource("ai-buildings",{type:"geojson",data:{type:"FeatureCollection",features} as any});m.addLayer({id:"ai-buildings",source:"ai-buildings",type:"fill-extrusion",paint:{"fill-extrusion-color":["get","color"],"fill-extrusion-height":["get","height"],"fill-extrusion-opacity":.95}});facilities.forEach((f,i)=>{const[label,icon,color]=facilityVisual(f);const el=document.createElement("button");el.className="facility-marker";el.style.setProperty("--facility-color",color);el.innerHTML=`<strong>${i+1}</strong><span>${icon} ${f.name}</span>`;const popup=new maplibregl.Popup({offset:28}).setHTML(`<b>${icon} ${f.name}</b><small>${label}</small><p>${f.reason}</p>`);markers.push(new maplibregl.Marker({element:el,anchor:"bottom"}).setLngLat([f.longitude!,f.latitude!]).setPopup(popup).addTo(m))});if(plan.roads.length){m.addSource("ai-roads",{type:"geojson",data:{type:"FeatureCollection",features:plan.roads.map(r=>({type:"Feature",properties:{name:r.name},geometry:{type:"LineString",coordinates:r.coordinates}}))} as any});m.addLayer({id:"ai-roads",source:"ai-roads",type:"line",paint:{"line-color":"#ff6b4a","line-width":7}})}if(plan.zones.length){m.addSource("ai-zones",{type:"geojson",data:{type:"FeatureCollection",features:plan.zones.map(z=>({type:"Feature",properties:{name:z.name},geometry:{type:"Polygon",coordinates:[z.coordinates]}}))} as any});m.addLayer({id:"ai-zones",source:"ai-zones",type:is3d?"fill-extrusion":"fill",paint:is3d?{"fill-extrusion-color":"#36a58a","fill-extrusion-height":8,"fill-extrusion-opacity":.45}:{"fill-color":"#36a58a","fill-opacity":.35}})}});return()=>{markers.forEach(x=>x.remove());m.remove()}},[center,boundary,plan,is3d]);
+ return <article className="live-map"><header><small>{plan?"AI PROPOSED":"CURRENT CITY"}</small><b>{title}</b><button onClick={()=>set3d(v=>!v)}>{is3d?"2D":"3D"}</button></header><div ref={host}/>{plan&&<aside className="facility-legend"><b>새로 배치한 시설</b>{facilities.map((f,i)=>{const[label,icon,color]=facilityVisual(f);return <span key={f.id} style={{"--facility-color":color} as CSSProperties}><strong>{i+1}</strong>{icon} {f.name}<small>{label}</small></span>})}</aside>}</article>
 }

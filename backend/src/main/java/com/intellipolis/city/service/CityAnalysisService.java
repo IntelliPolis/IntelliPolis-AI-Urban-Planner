@@ -18,8 +18,10 @@ public class CityAnalysisService {
  public CityAnalysisRequest sample(){return new CityAnalysisRequest("부산광역시","가상 해안구",320000L,48.5,22.4,14.2,8.1,12,34,8,2.3,1.8,1.1,List.of("해안대로","중앙로"),80000000000L,List.of("교통 혼잡 개선","녹지 접근성 향상"),new MapCoordinate(35.16,129.16),List.of());}
  public CityAnalysisResponse create(CityAnalysisRequest req){
   UUID id=UUID.randomUUID(); CityScores scores=calculator.current(req); List<String>warnings=new ArrayList<>();
-  warnings.add("Gemini를 사용할 수 없어 규칙 기반 분석으로 대체했습니다.");
-  var response=new CityAnalysisResponse(id,req.cityName(),req.districtName(),scores,fallback(scores),plans(req),warnings,OffsetDateTime.now());
+  var agents=new ArrayList<>(fallback(scores));
+  try{ai.explain(mapper.writeValueAsString(req)).ifPresentOrElse(summary->{var old=agents.get(0);agents.set(0,new AgentAnalysis(old.domain(),old.score(),summary,old.problems(),old.suggestions(),old.warnings()));},()->warnings.add("Gemini를 사용할 수 없어 규칙 기반 분석으로 대체했습니다."));}
+  catch(Exception e){warnings.add("Gemini를 사용할 수 없어 규칙 기반 분석으로 대체했습니다.");}
+  var response=new CityAnalysisResponse(id,req.cityName(),req.districtName(),scores,agents,plans(req),warnings,OffsetDateTime.now());
   requests.put(id,req);return repository.save(response);
  }
  public CityAnalysisResponse get(UUID id){return repository.find(id);}
@@ -39,9 +41,12 @@ public class CityAnalysisService {
  private CityPlan defaultPlan(PlanType t,CityAnalysisRequest r){
   FacilityType ft=t==PlanType.ECO_FOCUSED?FacilityType.PARK:t==PlanType.COST_EFFECTIVE?FacilityType.PUBLIC_SERVICE:FacilityType.TRANSIT_HUB;
   long cost=t==PlanType.COST_EFFECTIVE?r.totalBudget()/5:r.totalBudget()/3;
-  var f=new PlannedFacility(UUID.randomUUID().toString(),ft==FacilityType.PARK?"생활권 연결 공원":"생활권 개선 시설",ft,PlanStatus.PROPOSED,r.mapCenter().longitude(),r.mapCenter().latitude(),0d,cost,"입력된 우선 목표 보완");
-  var score=calculator.planned(r,List.of(f),cost);
-  return new CityPlan(t,switch(t){case BALANCED->"균형형";case ECO_FOCUSED->"환경 중심형";case COST_EFFECTIVE->"예산 효율형";},"규칙 기반 기본 계획","분야별 지표의 현실적인 개선",List.of(f),List.of(),List.of(),cost,List.of("단계적 개선"),List.of("전문가 검토 필요"),List.of(new ImplementationPhase(1,"검토","후보지와 비용을 검토합니다.")),score);
+  double x=r.mapCenter().longitude(),y=r.mapCenter().latitude(),d=.002;
+  var facilities=List.of(new PlannedFacility(UUID.randomUUID().toString(),ft==FacilityType.PARK?"생활권 연결 공원":"생활권 개선 시설",ft,PlanStatus.PROPOSED,x,y,38d,cost/2,"분석 우선 목표를 반영한 신규 거점"),new PlannedFacility(UUID.randomUUID().toString(),"복합 생활 서비스 거점",FacilityType.PUBLIC_SERVICE,PlanStatus.PROPOSED,x+d,y+d/2,24d,cost/2,"기존 상권과 보행권을 연결"));
+  var roads=List.of(new PlannedRoad(UUID.randomUUID().toString(),"생활권 연결축",t==PlanType.ECO_FOCUSED?RoadType.BICYCLE:RoadType.BRT,PlanStatus.PROPOSED,List.of(List.of(x-d*1.5,y-d),List.of(x,y),List.of(x+d*1.5,y+d)),"신규 거점과 기존 중심지를 연결"));
+  var zones=List.of(new PlannedZone(UUID.randomUUID().toString(),"우선 개선 구역",t==PlanType.ECO_FOCUSED?ZoneType.GREEN:ZoneType.REDEVELOPMENT,PlanStatus.PROPOSED,List.of(List.of(x-d,y-d),List.of(x+d,y-d),List.of(x+d,y+d),List.of(x-d,y+d),List.of(x-d,y-d)),"단계적 정비가 필요한 후보 구역"));
+  var score=calculator.planned(r,facilities,cost);
+  return new CityPlan(t,switch(t){case BALANCED->"균형형";case ECO_FOCUSED->"환경 중심형";case COST_EFFECTIVE->"예산 효율형";},"규칙 기반 기본 계획","분야별 지표의 현실적인 개선",facilities,roads,zones,cost,List.of("생활권 접근성 개선"),List.of("전문가 검토 필요"),List.of(new ImplementationPhase(1,"후보지 검토","부지와 비용을 검토합니다.")),score);
  }
  private CityPlan sanitize(CityPlan p,CityAnalysisRequest r,List<String>warnings){
   List<PlannedFacility> fs=p.facilities()==null?List.of():p.facilities().stream().filter(f->f.latitude()!=null&&f.longitude()!=null&&f.latitude()>=-90&&f.latitude()<=90&&f.longitude()>=-180&&f.longitude()<=180).toList();

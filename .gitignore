@@ -2,3 +2,11 @@
 backend/.gradle-cache/
 backend/.gradle/
 backend/build/
+backend/data/raw/
+backend/data/cache/
+.idea/
+.vscode/
+backend/bin/
+frontend/dist/
+*.log
+*.tsbuildinfo

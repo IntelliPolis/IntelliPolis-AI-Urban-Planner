@@ -23,9 +23,17 @@ Copy-Item .env.example .env
 - `GET /api/city-analyses/{analysisId}`
 - `POST /api/city-analyses/{analysisId}/plans/{planType}/evaluate`
 - `POST /api/city-analyses/{analysisId}/plans/{planType}/explain`
+- `GET /api/urban-data/regions`
+- `GET /api/urban-data/summary?city=서울특별시&district=강남구`
+- `GET /api/vworld/status`
+- `GET /api/vworld/search?query=강남구`
 
 샘플 요청은 `GET /api/cities/sample` 응답을 그대로 `POST /api/city-analyses`에 전송할 수 있습니다.
 
 점수는 접근 거리, 시설 수, 공원 비율, 혼잡 도로, 예산을 이용한 프로젝트용 규칙 기반 휴리스틱입니다. 정밀한 도시계획·교통 모델이 아닙니다. Java가 객관 지표와 예상 점수를 계산하고 AI는 해석과 참고 설명만 담당합니다.
 
 향후 영속 저장소, 정교한 공간 검증, 에이전트 구조화 출력과 운영 관측 기능을 확장할 수 있습니다.
+
+## 도시 원본 데이터
+
+원본 CSV/TXT는 Git에 올리지 않고 `data/raw`에 둡니다. `URBAN_DATA_RAW_PATH`로 다른 경로를 지정할 수 있습니다. 현재 요약 API는 법정동, 상권, 공원, 학교, 버스정류장, 지방재정 파일을 스트리밍 집계하며 첫 조회 결과를 메모리에 캐시합니다. CP949와 UTF-8 원본은 파일별 인코딩으로 읽습니다.
