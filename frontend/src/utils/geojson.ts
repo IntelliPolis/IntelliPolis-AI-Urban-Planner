@@ -1,0 +1,7 @@
+import type { FeatureCollection, Geometry, GeoJsonProperties } from "geojson";
+import type { PlannedFacility, PlannedRoad, PlannedZone } from "../types/city";
+const collection=(features:FeatureCollection["features"]):FeatureCollection<Geometry,GeoJsonProperties>=>({type:"FeatureCollection",features});
+export const validCoordinate=(c:number[])=>c.length>=2&&Number.isFinite(c[0])&&Number.isFinite(c[1])&&c[0]>=-180&&c[0]<=180&&c[1]>=-90&&c[1]<=90;
+export const facilitiesGeoJson=(items:PlannedFacility[])=>collection(items.filter(x=>x.longitude!=null&&x.latitude!=null&&validCoordinate([x.longitude,x.latitude])).map(x=>({type:"Feature",geometry:{type:"Point",coordinates:[x.longitude!,x.latitude!]},properties:{...x}})));
+export const roadsGeoJson=(items:PlannedRoad[])=>collection(items.filter(x=>x.coordinates.length>=2&&x.coordinates.every(validCoordinate)).map(x=>({type:"Feature",geometry:{type:"LineString",coordinates:x.coordinates},properties:{id:x.id,name:x.name,roadType:x.roadType,reason:x.reason}})));
+export const zonesGeoJson=(items:PlannedZone[])=>collection(items.filter(x=>x.coordinates.length>=4&&x.coordinates.every(validCoordinate)&&x.coordinates[0][0]===x.coordinates.at(-1)?.[0]&&x.coordinates[0][1]===x.coordinates.at(-1)?.[1]).map(x=>({type:"Feature",geometry:{type:"Polygon",coordinates:[x.coordinates]},properties:{id:x.id,name:x.name,zoneType:x.zoneType,reason:x.reason}})));
