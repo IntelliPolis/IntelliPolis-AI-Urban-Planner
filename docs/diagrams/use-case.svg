@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <defs>
+    <style>
+      text{font-family:"Malgun Gothic","Noto Sans KR",sans-serif;fill:#18332e}.title{font-size:34px;font-weight:800}.sub{font-size:15px;fill:#66736f}.actor{font-size:17px;font-weight:700}.uc{font-size:16px;font-weight:700}.note{font-size:13px;fill:#66736f}.line{stroke:#799089;stroke-width:2;fill:none}.dash{stroke:#9ba9a5;stroke-width:2;stroke-dasharray:7 6;fill:none}
+    </style>
+    <filter id="shadow"><feDropShadow dx="0" dy="5" stdDeviation="7" flood-opacity=".12"/></filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L9,3 L0,6 Z" fill="#799089"/></marker>
+  </defs>
+  <rect width="1400" height="900" fill="#f5f2e9"/>
+  <text x="70" y="65" class="title">IntelliPolis 유스케이스 다이어그램</text>
+  <text x="70" y="93" class="sub">AI 기반 도시계획 대안 비교 및 의사결정 지원</text>
+
+  <g transform="translate(85 330)">
+    <circle cx="70" cy="38" r="30" fill="#fff" stroke="#173f37" stroke-width="4"/>
+    <path d="M70 68v105M20 108h100M70 173l-45 75M70 173l45 75" class="line" stroke="#173f37" stroke-width="5"/>
+    <text x="70" y="285" text-anchor="middle" class="actor">도시계획 검토자</text>
+    <text x="70" y="308" text-anchor="middle" class="note">담당자 · 주민 · 연구자</text>
+  </g>
+
+  <rect x="300" y="125" width="760" height="690" rx="28" fill="#fff" stroke="#173f37" stroke-width="3" filter="url(#shadow)"/>
+  <text x="680" y="165" text-anchor="middle" class="actor">IntelliPolis 시스템</text>
+
+  <g fill="#edf5f1" stroke="#2a7665" stroke-width="2">
+    <ellipse cx="500" cy="245" rx="145" ry="50"/><ellipse cx="840" cy="245" rx="145" ry="50"/>
+    <ellipse cx="500" cy="385" rx="145" ry="50"/><ellipse cx="840" cy="385" rx="145" ry="50"/>
+    <ellipse cx="500" cy="525" rx="145" ry="50"/><ellipse cx="840" cy="525" rx="145" ry="50"/>
+    <ellipse cx="500" cy="665" rx="145" ry="50"/><ellipse cx="840" cy="665" rx="145" ry="50"/>
+  </g>
+  <g text-anchor="middle" class="uc">
+    <text x="500" y="241">시·구 선택</text><text x="500" y="263" class="note">분석 범위 지정</text>
+    <text x="840" y="241">구 단위 현황 조회</text><text x="840" y="263" class="note">상권 · 공원 · 예산</text>
+    <text x="500" y="381">교통·공간데이터 분석</text><text x="500" y="403" class="note">ITS · SHP 교차 검사</text>
+    <text x="840" y="381">현재 도시 점수 계산</text><text x="840" y="403" class="note">Java 규칙 기반</text>
+    <text x="500" y="521">AI 분야별 의견 생성</text><text x="500" y="543" class="note">교통 · 환경 · 경제 · 생활</text>
+    <text x="840" y="521">계획 대안 3개 생성</text><text x="840" y="543" class="note">균형 · 환경 · 예산효율</text>
+    <text x="500" y="661">구 경계·시설 지도 확인</text><text x="500" y="683" class="note">2D/3D · 이름표 · 배치 이유</text>
+    <text x="840" y="661">계획안 비교·검토</text><text x="840" y="683" class="note">예상 점수와 상충관계</text>
+  </g>
+
+  <path d="M205 465H340" class="line"/>
+  <path d="M645 245H695M645 385H695M645 525H695M645 665H695" class="dash" marker-end="url(#arrow)"/>
+  <path d="M500 295V335M840 295V335M500 435V475M840 435V475M500 575V615M840 575V615" class="dash" marker-end="url(#arrow)"/>
+
+  <g transform="translate(1130 185)">
+    <rect width="210" height="112" rx="18" fill="#173f37"/><text x="105" y="45" text-anchor="middle" fill="#fff" class="actor">외부 API</text><text x="105" y="74" text-anchor="middle" fill="#d9ebe5" class="note">VWorld · ITS · Gemini</text>
+    <rect y="190" width="210" height="135" rx="18" fill="#d9b85e"/><text x="105" y="232" text-anchor="middle" class="actor">로컬 공공데이터</text><text x="105" y="261" text-anchor="middle" class="note">지적 · 용도지역</text><text x="105" y="284" text-anchor="middle" class="note">계획시설 · CSV</text>
+  </g>
+  <path d="M1130 241H985" class="line" marker-end="url(#arrow)"/><path d="M1130 442H985" class="line" marker-end="url(#arrow)"/>
+  <text x="700" y="860" text-anchor="middle" class="note">AI는 행정 결정을 대신하지 않으며, 계획 대안을 비교·검토하도록 지원한다.</text>
+</svg>
