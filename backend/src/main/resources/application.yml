@@ -18,3 +18,16 @@ spring:
 app:
   cors:
     allowed-origin: ${FRONTEND_ORIGIN:http://localhost:5173}
+  vworld:
+    api-key: ${VWORLD_API_KEY:}
+    domain: ${VWORLD_DOMAIN:http://localhost:5173}
+  urban-data:
+    raw-path: ${URBAN_DATA_RAW_PATH:data/raw}
+  public-data:
+    api-key: ${PUBLIC_DATA_API_KEY:}
+  neis:
+    api-key: ${NEIS_API_KEY:}
+  seoul-data:
+    api-key: ${SEOUL_OPEN_DATA_API_KEY:}
+  its:
+    api-key: ${ITS_API_KEY:}
