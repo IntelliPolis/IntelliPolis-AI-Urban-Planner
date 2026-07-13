@@ -1114,9 +1114,3 @@ Content-Type: application/json
 ## 7. 발표용 한 문장
 
 > “IntelliPolis의 React 프론트엔드는 현재 샘플 데이터로 도시 분석 화면과 사용자 상호작용을 완성했으며, 다음 단계에서 Spring Boot API를 연결해 Java가 점수를 계산하고 Gemini가 그 결과를 설명한 뒤 DB에 저장하도록 설계했습니다.”
->
-> # 설계·계약 문서 (Day 2 산출물) — 팀 IntelliPolis
-
-> 저장 위치: `docs/design.md`  
-> 프론트엔드와 백엔드는 이 문서의 변수명·타입·URL·상태 코드·JSON 구조를 그대로 사용한다.  
-> 계약을 변경할 때는 **문서를 먼저 수정하고**, 같은 PR에서 Java DTO와 TypeScript 타입을 함께 변경한다.
