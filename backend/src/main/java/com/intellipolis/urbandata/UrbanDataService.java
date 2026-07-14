@@ -36,7 +36,7 @@ public class UrbanDataService {
   if(find("전국초중등학교위치표준데이터")==null)warnings.add("전국 초중등학교 파일이 없어 학교 수를 집계하지 않았습니다.");
   if(find("202606_시군구_연령별인구현황")==null||find("202606_시군구_고령인구현황")==null)warnings.add("시군구 인구 파일이 없어 인구 비율을 집계하지 않았습니다.");
   try{if(spatial!=null)busStops=busStops().stream().filter(x->spatial.contains(city,district,x[0],x[1])).count();}catch(Exception e){warnings.add("버스정류장 공간 집계에 실패했습니다.");}
-  try{if(external!=null)hospitals=(long)external.hospitalCount(city,district);}catch(Exception e){warnings.add("병원 Open API 집계에 실패했습니다.");}
+  try{if(external!=null)hospitals=(long)external.hospitalCount(city,district);}catch(Exception e){warnings.add("병원 Open API 집계에 실패했습니다: "+e.getMessage());}
   double elderlyRatio=local.population==0?0:local.elderly*100d/local.population,youthRatio=local.population==0?0:local.youth*100d/local.population;
   return new DistrictSummary(city,district,businessCountCache.getOrDefault(city+"/"+district,0L),local.parks,local.parkArea,local.schoolAvailable?local.schools:null,null,busStops,hospitals,local.population,elderlyRatio,youthRatio,Map.copyOf(local.budget),warnings);
  }
