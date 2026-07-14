@@ -20,8 +20,9 @@ public class CityScoreCalculator {
   long parks=facilities.stream().filter(f->f.facilityType()==FacilityType.PARK).count();
   long hospitals=facilities.stream().filter(f->f.facilityType()==FacilityType.HOSPITAL).count();
   long transit=facilities.stream().filter(f->f.facilityType()==FacilityType.TRANSIT_HUB).count();
+  long publicServices=facilities.stream().filter(f->f.facilityType()==FacilityType.PUBLIC_SERVICE).count();
   int economy=clamp(b.economy()-(cost>r.totalBudget()?25:0)-(int)Math.min(15,facilities.stream().filter(f->f.estimatedCost()!=null&&f.estimatedCost()>r.totalBudget()/3).count()*5));
-  return scores(clamp(b.traffic()+(int)transit*6),clamp(b.environment()+(int)parks*7),economy,clamp(b.living()+(int)hospitals*7));
+  return scores(clamp(b.traffic()+(int)transit*6),clamp(b.environment()+(int)parks*7),economy,clamp(b.living()+(int)hospitals*7+(int)publicServices*4));
  }
  private CityScores scores(int t,int e,int c,int l){ return new CityScores(t,e,c,l,Math.round((t+e+c+l)/4f)); }
  public int clamp(int n){ return Math.max(0,Math.min(100,n)); }

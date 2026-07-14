@@ -26,6 +26,7 @@ public class CityAnalysisService {
  }
  public CityAnalysisResponse get(UUID id){return repository.find(id);}
  public CityAnalysisResponse evaluate(UUID id,PlanType type,CityPlan incoming){
+  if(incoming.planType()!=type)throw new IllegalArgumentException("요청한 계획 유형과 평가할 계획 유형이 일치하지 않습니다.");
   var old=repository.find(id);var req=requests.get(id);var clean=sanitize(incoming,req,new ArrayList<>());
   List<CityPlan> plans=new ArrayList<>(old.plans());plans.removeIf(p->p.planType()==type);plans.add(clean);
   return repository.save(new CityAnalysisResponse(old.analysisId(),old.cityName(),old.districtName(),old.currentScores(),old.agentAnalyses(),plans,old.warnings(),old.createdAt()));

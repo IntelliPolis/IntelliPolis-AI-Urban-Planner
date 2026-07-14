@@ -13,21 +13,21 @@ import org.springframework.stereotype.Service;
 @Service
 public class UrbanDataService {
  private static final Set<String> CITIES=Set.of("서울특별시","부산광역시","대구광역시","인천광역시","광주광역시","대전광역시","울산광역시");
- private final Path raw; private final Map<String,DistrictSummary> cache=new ConcurrentHashMap<>(); private volatile Map<String,List<String>> regionCache;
+ private final Path raw; private final Map<String,DistrictSummary> cache=new ConcurrentHashMap<>();
+ private volatile Map<String,List<String>> regionCache; private volatile Map<String,Long> businessCountCache=Map.of();
  public UrbanDataService(@Value("${app.urban-data.raw-path:data/raw}") String rawPath){raw=Path.of(rawPath);}
 
  public synchronized Map<String,List<String>> regions(){
-  if(regionCache!=null)return regionCache;Map<String,Set<String>> found=new TreeMap<>();CITIES.forEach(c->found.put(c,new TreeSet<>()));
-  for(String city:CITIES){Path file=find("소상공인시장진흥공단_상가(상권)정보_"+shortCity(city)+"_");if(file!=null)scan(file,StandardCharsets.UTF_8,x->{if(city.equals(x.get("시도명")))found.get(city).add(x.get("시군구명"));});}
-  Map<String,List<String>> result=new LinkedHashMap<>();found.forEach((city,districts)->result.put(city,List.copyOf(districts)));regionCache=Collections.unmodifiableMap(result);return regionCache;
+  if(regionCache!=null)return regionCache;Map<String,Set<String>> found=new TreeMap<>();Map<String,Long> counts=new HashMap<>();CITIES.forEach(c->found.put(c,new TreeSet<>()));
+  for(String city:CITIES){Path file=find("소상공인시장진흥공단_상가(상권)정보_"+shortCity(city)+"_");if(file!=null)scan(file,StandardCharsets.UTF_8,x->{if(city.equals(x.get("시도명"))){String district=x.get("시군구명");found.get(city).add(district);counts.merge(city+"/"+district,1L,Long::sum);}});}
+  Map<String,List<String>> result=new LinkedHashMap<>();found.forEach((city,districts)->result.put(city,List.copyOf(districts)));businessCountCache=Map.copyOf(counts);regionCache=Collections.unmodifiableMap(result);return regionCache;
  }
 
  public DistrictSummary summary(String city,String district){if(!regions().getOrDefault(city,List.of()).contains(district))throw new IllegalArgumentException("지원하지 않는 시·군·구입니다.");return cache.computeIfAbsent(city+"/"+district,k->load(city,district));}
 
  private DistrictSummary load(String city,String district){
   long businesses=0,parks=0;double parkArea=0;Map<String,Long> budget=new TreeMap<>();
-  Path business=find("소상공인시장진흥공단_상가(상권)정보_"+shortCity(city)+"_");
-  long[] businessCount={0};if(business!=null)scan(business,StandardCharsets.UTF_8,x->{if(district.equals(x.get("시군구명")))businessCount[0]++;});businesses=businessCount[0];
+  businesses=businessCountCache.getOrDefault(city+"/"+district,0L);
   Path park=find("전국도시공원정보표준데이터");
   long[] parkCount={0};double[] parkAreaSum={0};if(park!=null)scan(park,Charset.forName("MS949"),x->{String address=x.get("소재지도로명주소")+" "+x.get("소재지지번주소");if(address.contains(city+" "+district)){parkCount[0]++;parkAreaSum[0]+=number(x.get("공원면적"));}});parks=parkCount[0];parkArea=parkAreaSum[0];
   Path finance=find("기능별 회계별 세출예산");

@@ -13,4 +13,5 @@ class CityScoreCalculatorTest {
  @Test void overBudgetLowersEconomy(){assertThat(c.planned(request(),List.of(),101).economy()).isLessThan(c.planned(request(),List.of(),100).economy());}
  @Test void parkRaisesEnvironment(){assertThat(c.planned(request(),List.of(f(FacilityType.PARK,10)),10).environment()).isGreaterThan(c.current(request()).environment());}
  @Test void hospitalRaisesLiving(){assertThat(c.planned(request(),List.of(f(FacilityType.HOSPITAL,10)),10).living()).isGreaterThan(c.current(request()).living());}
+ @Test void publicServiceRaisesLiving(){assertThat(c.planned(request(),List.of(f(FacilityType.PUBLIC_SERVICE,10)),10).living()).isGreaterThan(c.current(request()).living());}
 }
