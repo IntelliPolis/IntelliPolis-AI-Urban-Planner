@@ -132,7 +132,7 @@
 
 - 요청: `GET http://localhost:8080/api/health`
 - 확인 항목: HTTP 200, `status: UP`
-- 이미지: !<img width="1402" height="930" alt="image" src="https://github.com/user-attachments/assets/8b0174c0-d27c-4cee-bcdf-89fc80ff5e83" />
+- 이미지: <img width="1402" height="930" alt="image" src="https://github.com/user-attachments/assets/8b0174c0-d27c-4cee-bcdf-89fc80ff5e83" />
 
 
 ### 스크린샷 2. 부산 강서구 도시요약
@@ -140,7 +140,7 @@
 - 요청: `GET http://localhost:8080/api/urban-data/summary`
 - Query Params: `city=부산광역시`, `district=강서구`
 - 확인 항목: 인구, 공원, 학교, 버스정류장, 병원 수, 예산, warnings
-- 이미지: !<img width="1405" height="941" alt="image" src="https://github.com/user-attachments/assets/381656b0-ac3c-41cc-b0e1-5b3c408662b6" />
+- 이미지: <img width="1405" height="941" alt="image" src="https://github.com/user-attachments/assets/381656b0-ac3c-41cc-b0e1-5b3c408662b6" />
 
 ## 문제와 해결 과정
 
