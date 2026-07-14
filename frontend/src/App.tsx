@@ -1,47 +1,204 @@
-import {useEffect,useRef,useState} from "react";
-import type {CSSProperties} from "react";
-import maplibregl from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
-import "./map-enhancements.css";
-import "./traffic.css";
-import type {CityAnalysisRequest,CityPlan,PlannedFacility} from "./types/city";
-const API=import.meta.env.VITE_API_BASE_URL||"http://localhost:8080";
-type Regions=Record<string,string[]>;
-type TrafficSummary={measuredLinkCount:number;averageSpeedKmh:number;congestedLinkCount:number;congestedRoads:{linkId:string;roadName:string;speedKmh:number}[];warnings:string[]};
-type SpatialSummary={eligibleParcelCount:number;nearbyPlanningFacilityCount:number;candidates:{parcelId:string;longitude:number;latitude:number;areaM2:number;distanceM:number}[];warnings:string[]};
-type DistrictBoundary={cityName:string;districtName:string;type:"Polygon"|"MultiPolygon";coordinates:any;bounds:[number,number,number,number]};
-type Summary={cityName:string;districtName:string;businessCount:number;parkCount:number;totalParkAreaM2:number;schoolCount:number|null;busStopCount:number|null;hospitalCount:number|null;population:number;elderlyRatio:number;youthRatio:number;budgetByCategory:Record<string,number>;warnings:string[];traffic?:TrafficSummary;spatial?:SpatialSummary;boundary?:DistrictBoundary};
-async function json<T>(url:string,init?:RequestInit):Promise<T>{const r=await fetch(url,init);if(!r.ok)throw new Error((await r.json().catch(()=>({}))).message||`요청 실패 (${r.status})`);return r.json()}
-export default function App(){
- const[regions,setRegions]=useState<Regions>({}),[city,setCity]=useState(""),[district,setDistrict]=useState("");
- const[data,setData]=useState<Summary>(),[plans,setPlans]=useState<CityPlan[]>([]),[selected,setSelected]=useState(0),[center,setCenter]=useState<[number,number]>([127.0475,37.5176]);
- const[loading,setLoading]=useState(true),[error,setError]=useState("");
- useEffect(()=>{json<Regions>(`${API}/api/urban-data/regions`).then(x=>{setRegions(x);const c=Object.keys(x)[0]||"";setCity(c);setDistrict(x[c]?.[0]||"")}).catch(e=>setError(e.message)).finally(()=>setLoading(false))},[]);
- const analyze=async()=>{setLoading(true);setError("");try{
-  const summaryUrl=`${API}/api/urban-data/summary?city=${encodeURIComponent(city)}&district=${encodeURIComponent(district)}`;
-  const boundaryUrl=`${API}/api/spatial/boundary?city=${encodeURIComponent(city)}&district=${encodeURIComponent(district)}`;
-  const locationUrl=`${API}/api/vworld/search?query=${encodeURIComponent(`${city} ${district}`)}`;
-  const[summary,boundary,location]=await Promise.all([json<Summary>(summaryUrl),json<DistrictBoundary>(boundaryUrl).catch(()=>undefined),json<any>(locationUrl).catch(()=>undefined)]);
-  const point=location?.response?.result?.items?.[0]?.point;const fallback=boundary?[(boundary.bounds[0]+boundary.bounds[2])/2,(boundary.bounds[1]+boundary.bounds[3])/2] as [number,number]:center;const c:[number,number]=point?[Number(point.x),Number(point.y)]:fallback;
-  const trafficUrl=`${API}/api/traffic/summary?city=${encodeURIComponent(city)}&district=${encodeURIComponent(district)}&longitude=${c[0]}&latitude=${c[1]}`;const bounds=boundary?.bounds;const zoneCenters=bounds?[[.25,.25],[.75,.25],[.5,.5],[.25,.75],[.75,.75]].map(([x,y])=>[bounds[0]+(bounds[2]-bounds[0])*x,bounds[1]+(bounds[3]-bounds[1])*y]):[c];
-  const[traffic,...spatialZones]=await Promise.all([json<TrafficSummary>(trafficUrl).catch(()=>undefined),...zoneCenters.map(([longitude,latitude])=>json<SpatialSummary>(`${API}/api/spatial/candidates?city=${encodeURIComponent(city)}&district=${encodeURIComponent(district)}&longitude=${longitude}&latitude=${latitude}`).catch(()=>undefined))]);const spatial=spatialZones.find(Boolean);const candidateSites=spatialZones.flatMap(x=>x?.candidates.slice(0,1)||[]).map(x=>({longitude:x.longitude,latitude:x.latitude}));
-  const budget=Object.values(summary.budgetByCategory).reduce((a,b)=>a+b,0);const candidate=candidateSites[0];const boundaryPoints=bounds?[{longitude:bounds[0],latitude:bounds[1]},{longitude:bounds[2],latitude:bounds[1]},{longitude:bounds[2],latitude:bounds[3]},{longitude:bounds[0],latitude:bounds[3]}]:[];const area=bounds?Math.max(1,(bounds[2]-bounds[0])*88*(bounds[3]-bounds[1])*111):50;
-  const request:CityAnalysisRequest={cityName:city,districtName:district,population:summary.population,areaKm2:area,elderlyRatio:summary.elderlyRatio,youthRatio:summary.youthRatio,parkAreaRatio:Math.min(100,summary.totalParkAreaM2/500000),hospitalCount:summary.hospitalCount||0,schoolCount:summary.schoolCount||0,transitHubCount:summary.busStopCount||0,averageHospitalDistanceKm:0,averageParkDistanceKm:0,averageTransitDistanceKm:0,congestedRoads:traffic?.congestedRoads.map(x=>x.roadName).filter((x,i,a)=>a.indexOf(x)===i).slice(0,20)||[],totalBudget:budget,priorityGoals:["교통 접근성 개선","녹지 접근성 향상"],mapCenter:{longitude:candidate?.longitude||c[0],latitude:candidate?.latitude||c[1]},boundary:boundaryPoints,candidateSites};
-  const analysis=await json<{plans:CityPlan[]}>(`${API}/api/city-analyses`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(request)});setData({...summary,traffic,spatial,boundary});setCenter(c);setPlans(analysis.plans||[]);setSelected(0)
- }catch(e){setError(e instanceof Error?e.message:"도시 분석에 실패했습니다.")}finally{setLoading(false)}};
- return <><LandingHero/><main className="live-app" id="analysis"><section className="live-head"><div><p>VIRTUAL CITY LAB</p><h1>현재 도시와 AI 계획안을<br/><em>한눈에 비교합니다.</em></h1></div><div className="selectors"><label>시·광역시<select value={city} onChange={e=>{setCity(e.target.value);setDistrict(regions[e.target.value]?.[0]||"");setData(undefined)}}>{Object.keys(regions).map(x=><option key={x}>{x}</option>)}</select></label><label>구·군<select value={district} onChange={e=>{setDistrict(e.target.value);setData(undefined)}}>{(regions[city]||[]).map(x=><option key={x}>{x}</option>)}</select></label><button disabled={!district||loading} onClick={analyze}>{loading?"분석 중...":"도시 분석 시작 →"}</button></div>{error&&<p className="live-error">{error}</p>}</section>{data?<Dashboard data={data} center={center} plans={plans} selected={selected} onSelect={setSelected}/>:<section className="empty-live"><b>지역을 선택하고 도시 분석을 시작하세요.</b><span>VWorld 지역 좌표의 실제 지도 위에 AI 계획 시설을 강조합니다.</span></section>}</main></>}
-function LandingHero(){const start=()=>document.getElementById("analysis")?.scrollIntoView({behavior:"smooth"});return <><header className="nav-shell"><button className="brand" onClick={()=>scrollTo({top:0,behavior:"smooth"})} aria-label="홈으로 이동"><span className="brand-mark"><i/><i/><i/></span><span>INTELLI<span>POLIS</span></span></button><nav><button onClick={start}>도시 분석</button><button onClick={start}>계획안 비교</button></nav><button className="nav-cta" onClick={start}>도시 분석 시작</button></header><section className="hero"><div className="hero-copy"><div className="eyebrow"><span/> AI URBAN DECISION SUPPORT</div><h1>도시의 가능성을<br/><em>더 현명하게 설계합니다.</em></h1><p>교통·환경·경제·생활 데이터를 하나의 시선으로 분석하고,<br className="desktop"/> AI와 함께 현실적인 도시계획 대안을 비교하세요.</p><div className="hero-actions"><button className="primary" onClick={start}>새 도시 분석 시작 <span>↗</span></button></div><div className="trust-row"><div><strong>4</strong><span>전문 분석 관점</span></div><div><strong>3</strong><span>도시계획 대안</span></div><div><strong>100%</strong><span>설명 가능한 비교</span></div></div></div><div className="hero-visual" aria-label="미래 스마트시티 조감도"><div className="image-glow"/><img src="/intellipolis-hero.png" alt="흰색과 금색으로 설계된 미래 스마트시티"/><div className="float-card card-one"><span className="pulse"/><b>도시 종합 점수</b><strong>72</strong><small>분석 예시</small></div><div className="float-card card-two"><span>AI INSIGHT</span><b>녹지 접근성 개선</b><small>우선 검토가 필요합니다</small></div><div className="gold-line line-a"/><div className="gold-line line-b"/></div><div className="scroll-cue"><span/>SCROLL TO EXPLORE</div></section></>}
-function Dashboard({data,center,plans,selected,onSelect}:{data:Summary;center:[number,number];plans:CityPlan[];selected:number;onSelect:(i:number)=>void}){const plan=plans[selected]||null;return <><section className="metric-row"><Metric label="상가·상권" value={`${data.businessCount.toLocaleString()}개`}/><Metric label="도시공원" value={`${data.parkCount.toLocaleString()}개`}/><Metric label="평균 통행속도" value={data.traffic?`${data.traffic.averageSpeedKmh}km/h`:"자료 없음"}/><Metric label="혼잡 링크" value={data.traffic?`${data.traffic.congestedLinkCount}개`:"자료 없음"}/></section><div className="plan-picker">{plans.map((p,i)=><button className={selected===i?"active":""} key={p.planType} onClick={()=>onSelect(i)}>{p.name}</button>)}</div><section className="map-compare"><MapView center={center} boundary={data.boundary} plan={null} title={`${data.districtName} 현재 배치`}/><MapView center={center} boundary={data.boundary} plan={plan} title={`${data.districtName} AI 개선 · ${plan?.name||""}`}/></section>{data.traffic&&<section className="traffic-review"><small>LIVE TRAFFIC REVIEW</small><h2>교통 혼잡 후보</h2>{data.traffic.congestedRoads.length?data.traffic.congestedRoads.slice(0,8).map(x=><p key={x.linkId}><b>{x.roadName}</b><span>{x.speedKmh}km/h · 링크 {x.linkId}</span></p>):<p>현재 조회 범위에 20km/h 미만 혼잡 링크가 없습니다.</p>}</section>}{plan&&<PlanDetails plan={plan}/>}<section className="agent-explanation"><small>MULTI-AGENT REVIEW</small><h2>분야별 검토 의견</h2><div><p><b>교통</b> ITS 실측 속도에서 20km/h 미만 링크를 혼잡 후보로 반영했습니다. 지도 연결축은 검토안이며 실제 신설은 필지·계획시설 검토가 필요합니다.</p><p><b>환경</b> 공원 수와 면적을 바탕으로 녹지 연결 가능성을 검토합니다.</p><p><b>경제</b> 기존 상권을 훼손하지 않고 생활 서비스 거점을 연계하는 방향입니다.</p><p><b>생활</b> 병원·학교·인구 API 값이 없는 항목은 생성하지 않고 미수집 상태로 둡니다.</p></div></section>{data.warnings.length>0&&<section className="live-warnings"><b>데이터 한계</b>{data.warnings.map(x=><span key={x}>{x}</span>)}</section>}</>}
-function PlanDetails({plan}:{plan:CityPlan}){return <section className="plan-details"><div><small>PLAN RATIONALE</small><h2>{plan.name}</h2><p>{plan.purpose}</p></div><dl><div><dt>신규 시설</dt><dd>{plan.facilities.length}개</dd></div><div><dt>연결 도로</dt><dd>{plan.roads.length}개</dd></div><div><dt>개발 구역</dt><dd>{plan.zones.length}개</dd></div></dl><div><b>배치 이유</b>{plan.facilities.map(x=><p key={x.id}>{x.name} — {x.reason}</p>)}{plan.roads.map(x=><p key={x.id}>{x.name} — {x.reason}</p>)}<b>기대 효과</b><p>{plan.benefits.join(", ")}</p><b>주의사항</b><p>{plan.tradeOffs.join(", ")}</p></div></section>}
-function Metric({label,value}:{label:string;value:string}){return <article><span>{label}</span><strong>{value}</strong></article>}
-const facilityVisual=(f:PlannedFacility)=>({
- HOSPITAL:["병원","🏥","#df4e5b"],PARK:["공원","🌳","#2e9d68"],SCHOOL:["학교","🏫","#4c78d0"],
- TRANSIT_HUB:["교통","🚉","#e07832"],CULTURE:["문화","🎭","#8b63c7"],PUBLIC_SERVICE:["공공","🏛️","#3b7d84"]
-}[f.facilityType]||["시설","●","#d2a93f"]);
-function MapView({center,boundary,plan,title}:{center:[number,number];boundary?:DistrictBoundary;plan:CityPlan|null;title:string}){
- const host=useRef<HTMLDivElement>(null),[is3d,set3d]=useState(true);
- const facilities=plan?.facilities.filter(f=>f.longitude!=null&&f.latitude!=null)||[];
- // @ts-expect-error MapLibre는 런타임 2D/3D 레이어 전환의 판별 유니온을 추론하지 못한다.
- useEffect(()=>{if(!host.current)return;const markers:maplibregl.Marker[]=[];const district={type:"Feature",properties:{name:boundary?.districtName},geometry:boundary?{type:boundary.type,coordinates:boundary.coordinates}:null};const style:any={version:8,sources:{vworld:{type:"raster",tiles:[`${API}/api/vworld/tiles/{z}/{y}/{x}.png`],tileSize:256},openmaptiles:{type:"vector",url:"https://demotiles.maplibre.org/tiles/tiles.json"},district:{type:"geojson",data:district}},layers:[{id:"vworld",type:"raster",source:"vworld"},{id:"district-fill",type:"fill",source:"district",paint:{"fill-color":"#2563eb","fill-opacity":.1}},{id:"district-line",type:"line",source:"district",paint:{"line-color":"#2563eb","line-width":4,"line-opacity":.95}}]};const m=new maplibregl.Map({container:host.current,style,center,zoom:15.5,pitch:is3d?55:0,bearing:is3d?-15:0});if(boundary)m.fitBounds([[boundary.bounds[0],boundary.bounds[1]],[boundary.bounds[2],boundary.bounds[3]]],{padding:35,duration:0});m.addControl(new maplibregl.NavigationControl(),"top-right");m.on("load",()=>{m.addLayer({id:"existing-buildings",source:"openmaptiles","source-layer":"building",type:"fill-extrusion",paint:{"fill-extrusion-color":"#c7c4bb","fill-extrusion-height":["coalesce",["get","render_height"],12],"fill-extrusion-opacity":.72}});if(!plan)return;const features=facilities.map(f=>{const x=f.longitude!,y=f.latitude!,d=.00018;const [, ,color]=facilityVisual(f);return{type:"Feature",properties:{name:f.name,height:f.height&&f.height>0?f.height:35,color},geometry:{type:"Polygon",coordinates:[[[x-d,y-d],[x+d,y-d],[x+d,y+d],[x-d,y+d],[x-d,y-d]]]}}});m.addSource("ai-buildings",{type:"geojson",data:{type:"FeatureCollection",features} as any});m.addLayer({id:"ai-buildings",source:"ai-buildings",type:"fill-extrusion",paint:{"fill-extrusion-color":["get","color"],"fill-extrusion-height":["get","height"],"fill-extrusion-opacity":.95}});facilities.forEach((f,i)=>{const[label,icon,color]=facilityVisual(f);const el=document.createElement("button");el.className="facility-marker";el.style.setProperty("--facility-color",color);el.innerHTML=`<strong>${i+1}</strong><span>${icon} ${f.name}</span>`;const popup=new maplibregl.Popup({offset:28}).setHTML(`<b>${icon} ${f.name}</b><small>${label}</small><p>${f.reason}</p>`);markers.push(new maplibregl.Marker({element:el,anchor:"bottom"}).setLngLat([f.longitude!,f.latitude!]).setPopup(popup).addTo(m))});if(plan.roads.length){m.addSource("ai-roads",{type:"geojson",data:{type:"FeatureCollection",features:plan.roads.map(r=>({type:"Feature",properties:{name:r.name},geometry:{type:"LineString",coordinates:r.coordinates}}))} as any});m.addLayer({id:"ai-roads",source:"ai-roads",type:"line",paint:{"line-color":"#ff6b4a","line-width":7}})}if(plan.zones.length){m.addSource("ai-zones",{type:"geojson",data:{type:"FeatureCollection",features:plan.zones.map(z=>({type:"Feature",properties:{name:z.name},geometry:{type:"Polygon",coordinates:[z.coordinates]}}))} as any});m.addLayer({id:"ai-zones",source:"ai-zones",type:is3d?"fill-extrusion":"fill",paint:is3d?{"fill-extrusion-color":"#36a58a","fill-extrusion-height":8,"fill-extrusion-opacity":.45}:{"fill-color":"#36a58a","fill-opacity":.35}})}});return()=>{markers.forEach(x=>x.remove());m.remove()}},[center,boundary,plan,is3d]);
- return <article className="live-map"><header><small>{plan?"AI PROPOSED":"CURRENT CITY"}</small><b>{title}</b><button onClick={()=>set3d(v=>!v)}>{is3d?"2D":"3D"}</button></header><div ref={host}/><aside className="map-layer-legend"><b>지도 표시</b><span><i className="boundary-swatch"/>파란선 · 구 행정경계</span><span><i className="building-swatch"/>회색 · 기존 건물</span>{plan&&<><span><i className="road-swatch"/>주황선 · 생활권 연결 검토선</span><span><i className="zone-swatch"/>초록면 · 우선 개선구역</span></>}</aside>{plan&&<aside className="facility-legend"><b>우선 검토 시설 · {facilities.length}개</b>{facilities.map((f,i)=>{const[label,icon,color]=facilityVisual(f);return <span key={f.id} style={{"--facility-color":color} as CSSProperties}><strong>{i+1}</strong>{icon} {f.name}<small>{label}</small></span>})}</aside>}</article>
+import React, { useState } from 'react';
+
+// 프로젝트 요구사항에 정의된 타입 스냅샷 (필요시 types/city.ts 등과 연동하거나 유지)
+interface AnalysisRequest {
+    city: string;
+    district?: string;
+}
+
+export default function App() {
+    // --- 1. 기존 핵심 상태 및 UI 관리 State ---
+    const [cityInput, setCityInput] = useState('Busan');
+    const [districtInput, setDistrictInput] = useState('');
+    const [analysisResult, setAnalysisResult] = useState<any>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    // --- 2. [추가] 실시간 진행률 연동용 State ---
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [progressMessage, setProgressMessage] = useState('');
+
+    // --- 3. 핵심 로직: 실제 API resolve 시점에 연동되는 분석 함수 ---
+    const handleAnalyze = async () => {
+        // 초기화 및 시작 세팅 (0%)
+        setIsAnalyzing(true);
+        setProgress(0);
+        setProgressMessage('도시 기본 데이터(Summary)를 조회하고 있습니다...');
+        setError(null);
+        setAnalysisResult(null);
+
+        const requestData: AnalysisRequest = {
+            city: cityInput,
+            district: districtInput || undefined
+        };
+
+        try {
+            // [1단계] urban-data/summary 조회 (도시 기본 데이터)
+            const urbanResponse = await fetch('/api/urban-data/summary', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData),
+            });
+            if (!urbanResponse.ok) throw new Error('도시 기본 데이터 조회에 실패했습니다.');
+            const urbanData = await urbanResponse.json();
+
+            // 1단계 완료 -> 25% 업할당 및 다음 메시지 전환
+            setProgress(25);
+            setProgressMessage('교통 정보(Traffic Summary) 분석을 시작합니다...');
+
+            // [2단계] traffic/summary 조회 (교통 정보)
+            const trafficResponse = await fetch('/api/traffic/summary', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData),
+            });
+            if (!trafficResponse.ok) throw new Error('교통 정보 분석에 실패했습니다.');
+            const trafficData = await trafficResponse.json();
+
+            // 2단계 완료 -> 50% 업할당 및 다음 메시지 전환
+            setProgress(50);
+            setProgressMessage('공간 및 입지 후보지(Spatial Candidates) 분석을 진행 중입니다...');
+
+            // [3단계] spatial/candidates 조회 (공간·후보지 분석)
+            const spatialResponse = await fetch('/api/spatial/candidates', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData),
+            });
+            if (!spatialResponse.ok) throw new Error('공간 후보지 분석에 실패했습니다.');
+            const spatialData = await spatialResponse.json();
+
+            // 3단계 완료 -> 75% 업할당 및 생성 요청
+            setProgress(75);
+            setProgressMessage('AI 도시 계획안(City Analyses)을 대조 및 생성하고 있습니다...');
+
+            // [4단계] city-analyses POST (AI 계획안 생성)
+            // 네트워크 대기 시간을 고려하여 요청 직전에 95%~99% 선진입 유도 (실제 완료 전 100% 방지 규칙 준수)
+            setProgress(95);
+
+            const aiResponse = await fetch('/api/city-analyses', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ...requestData,
+                    urbanSummary: urbanData,
+                    trafficSummary: trafficData,
+                    spatialCandidates: spatialData
+                }),
+            });
+            if (!aiResponse.ok) throw new Error('AI 계획안 최종 생성에 실패했습니다.');
+            const finalResult = await aiResponse.json();
+
+            // 모든 단계 최종 성공 -> 100% 도달
+            setProgress(100);
+            setProgressMessage('모든 분석이 성공적으로 완료되었습니다!');
+            setAnalysisResult(finalResult);
+
+            // 사용자 체감을 위해 100% 완료 상태를 잠시 보여준 뒤 모달 오버레이를 닫음
+            setTimeout(() => {
+                setIsAnalyzing(false);
+            }, 600);
+
+        } catch (err: any) {
+            // 실패 시: 각 단계 catch에서 progress를 멈추고 에러 메시지 표시
+            console.error('분석 에러 발생:', err);
+            setError(err.message || '도시 분석 중 문제가 발생했습니다. 다시 시도해 주세요.');
+            setProgress(0);
+            setIsAnalyzing(false);
+        }
+    };
+
+    return (
+        <div className="live-app" style={{ padding: '20px', fontFamily: 'sans-serif' }}>
+            <header className="nav-shell" style={{ marginBottom: '30px', borderBottom: '1px solid #ccc', paddingBottom: '10px' }}>
+                <h2>IntelliPolis AI Urban Planner</h2>
+            </header>
+
+            {/* 입력 폼 파트 */}
+            <div className="metric-row" style={{ display: 'flex', gap: '15px', marginBottom: '20px', alignItems: 'center' }}>
+                <label>
+                    <strong>도시 선택: </strong>
+                    <input
+                        type="text"
+                        value={cityInput}
+                        onChange={(e) => setCityInput(e.target.value)}
+                        disabled={isAnalyzing}
+                        style={{ padding: '5px', borderRadius: '4px', border: '1px solid #aaa' }}
+                    />
+                </label>
+                <label>
+                    <strong>세부 구/군 (선택): </strong>
+                    <input
+                        type="text"
+                        value={districtInput}
+                        placeholder="예: 해운대구"
+                        onChange={(e) => setDistrictInput(e.target.value)}
+                        disabled={isAnalyzing}
+                        style={{ padding: '5px', borderRadius: '4px', border: '1px solid #aaa' }}
+                    />
+                </label>
+                <button
+                    onClick={handleAnalyze}
+                    disabled={isAnalyzing}
+                    style={{
+                        padding: '6px 15px', backgroundColor: '#007bff', color: '#fff',
+                        border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold'
+                    }}
+                >
+                    {isAnalyzing ? '분석 진행 중' : '분석 시작'}
+                </button>
+            </div>
+
+            {/* 에러 발생 시 기존 error state 재활용 레이아웃 */}
+            {error && (
+                <div className="warning-panel" style={{
+                    backgroundColor: '#fff3cd', color: '#856404', padding: '15px',
+                    borderRadius: '4px', border: '1px solid #ffeeba', marginBottom: '20px'
+                }}>
+                    <strong>⚠️ 에러 안내:</strong> {error}
+                </div>
+            )}
+
+            {/* --- 실시간 진행률 팝업 오버레이 UI --- */}
+            {isAnalyzing && (
+                <div className="progress-overlay" style={{
+                    position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+                    backgroundColor: 'rgba(0, 0, 0, 0.6)', display: 'flex', flexDirection: 'column',
+                    justifyContent: 'center', alignItems: 'center', zIndex: 9999, color: '#fff'
+                }}>
+                    <div style={{ backgroundColor: '#fff', padding: '30px', borderRadius: '8px', color: '#333', width: '350px', textAlign: 'center' }}>
+                        <h3 style={{ marginTop: 0, marginBottom: '20px' }}>도시 분석 시뮬레이션</h3>
+
+                        {/* 프로그레스 바 외형 트랙 */}
+                        <div className="progress-container" style={{
+                            width: '100%', backgroundColor: '#e9ecef', borderRadius: '4px', overflow: 'hidden', height: '16px'
+                        }}>
+                            {/* 프로그레스 바 내부 채우기 (CSS Transition 적용으로 25%씩 부드럽게 전진) */}
+                            <div className="progress-bar" style={{
+                                width: `${progress}%`, height: '100%', backgroundColor: '#28a745',
+                                transition: 'width 0.5s ease-in-out'
+                            }} />
+                        </div>
+
+                        <div style={{ marginTop: '15px', fontSize: '18px', fontWeight: 'bold', color: '#28a745' }}>
+                            {progress}% 완료
+                        </div>
+                        <div style={{ marginTop: '8px', fontSize: '14px', color: '#666', minHeight: '40px', lineHeight: '1.4' }}>
+                            {progressMessage}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 결과 화면 출력 렌더링 파트 */}
+            {analysisResult && (
+                <div className="analysis-result-panel" style={{ marginTop: '20px', padding: '20px', border: '1px solid #28a745', borderRadius: '6px' }}>
+                    <h3 style={{ color: '#28a745', marginTop: 0 }}>📊 AI 분석 및 계획안 생성 완료</h3>
+                    <pre style={{ backgroundColor: '#f8f9fa', padding: '15px', borderRadius: '4px', overflowX: 'auto' }}>
+            {JSON.stringify(analysisResult, null, 2)}
+          </pre>
+                </div>
+            )}
+        </div>
+    );
 }
