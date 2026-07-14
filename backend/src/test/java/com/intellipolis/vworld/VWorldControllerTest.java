@@ -10,5 +10,5 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class VWorldControllerTest {
  @Autowired MockMvc mvc;
  @Test void reportsMissingConfigurationWithoutExposingKey() throws Exception {mvc.perform(get("/api/vworld/status")).andExpect(status().isOk()).andExpect(jsonPath("$.configured").value(false)).andExpect(jsonPath("$.apiKey").doesNotExist());}
- @Test void refusesSearchWithoutKey() throws Exception {mvc.perform(get("/api/vworld/search").param("query","강남구")).andExpect(status().isServiceUnavailable()).andExpect(jsonPath("$.message").value("브이월드 API 키가 설정되지 않았습니다."));}
+ @Test void refusesSearchWithoutKey() throws Exception {mvc.perform(get("/api/vworld/search").param("query","해운대구")).andExpect(status().isServiceUnavailable()).andExpect(jsonPath("$.message").value("브이월드 API 키가 설정되지 않았습니다."));}
 }

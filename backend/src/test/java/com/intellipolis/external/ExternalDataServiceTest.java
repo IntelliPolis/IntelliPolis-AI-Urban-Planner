@@ -7,12 +7,12 @@ import org.junit.jupiter.api.Test;
 class ExternalDataServiceTest {
     @Test
     void missingKeyFailsBeforeCallingExternalApi() {
-        var service = new ExternalDataService("", "", "");
+        var service = new ExternalDataService("", "");
 
         assertThatThrownBy(() -> service.hospitals("110000", "110001"))
                 .isInstanceOf(ExternalDataException.class)
                 .hasMessage("공공데이터포털 API 키가 설정되지 않았습니다.");
-        assertThatThrownBy(() -> service.schools("B10", "강남구"))
+        assertThatThrownBy(() -> service.schools("C10", "해운대구"))
                 .isInstanceOf(ExternalDataException.class)
                 .hasMessage("나이스 API 키가 설정되지 않았습니다.");
     }

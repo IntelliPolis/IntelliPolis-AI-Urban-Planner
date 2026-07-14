@@ -27,7 +27,5 @@ app:
     api-key: ${PUBLIC_DATA_API_KEY:}
   neis:
     api-key: ${NEIS_API_KEY:}
-  seoul-data:
-    api-key: ${SEOUL_OPEN_DATA_API_KEY:}
   its:
     api-key: ${ITS_API_KEY:}

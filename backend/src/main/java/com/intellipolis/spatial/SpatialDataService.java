@@ -41,14 +41,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class SpatialDataService {
     private static final CoordinateReferenceSystem WGS84;
-    private static final Map<String, String> CADASTRAL = Map.of(
-            "서울특별시", "LSMD_CONT_LDREG_서울.zip", "부산광역시", "LSMD_CONT_LDREG_부산.zip",
-            "대구광역시", "LSMD_CONT_LDREG_대구.zip", "인천광역시", "LSMD_CONT_LDREG_인천.zip",
-            "광주광역시", "LSMD_CONT_LDREG_전남광주통합특별시.zip", "대전광역시", "LSMD_CONT_LDREG_대전.zip",
-            "울산광역시", "LSMD_CONT_LDREG_울산.zip");
-    private static final Map<String, String> CITY_CODES = Map.of(
-            "서울특별시", "11000", "부산광역시", "26000", "대구광역시", "27000",
-            "인천광역시", "28000", "광주광역시", "29000", "대전광역시", "30000", "울산광역시", "31000");
+    private static final Map<String, String> CADASTRAL = Map.of("부산광역시", "LSMD_CONT_LDREG_부산.zip");
+    private static final Map<String, String> CITY_CODES = Map.of("부산광역시", "26000");
     static {
         try { WGS84 = CRS.decode("EPSG:4326", true); }
         catch (Exception e) { throw new ExceptionInInitializerError(e); }
@@ -73,7 +67,7 @@ public class SpatialDataService {
         List<String> warnings = new ArrayList<>();
         try {
             String filename = CADASTRAL.get(city);
-            if (filename == null) return new SpatialCandidates(city, district, 0, 0, 0, List.of(), List.of("지원하는 특별시·광역시가 아닙니다."));
+            if (filename == null) return new SpatialCandidates(city, district, 0, 0, 0, List.of(), List.of("부산광역시만 지원합니다."));
             Path cadastral = cache.resolve(CITY_CODES.get(city)).resolve("cadastral");
             extractZip(raw.resolve("cadastral").resolve(filename), cadastral);
             List<Geometry> facilities = loadFacilities(city, longitude, latitude, warnings);
@@ -100,7 +94,7 @@ public class SpatialDataService {
     private DistrictBoundary loadBoundary(String city, String district) {
         try {
             String filename = CADASTRAL.get(city);
-            if (filename == null) throw new IOException("지원하는 특별시·광역시가 아닙니다.");
+            if (filename == null) throw new IOException("부산광역시만 지원합니다.");
             String prefix = Files.readAllLines(raw.resolve("법정동코드 전체자료.txt"), Charset.forName("MS949")).stream()
                     .map(line -> line.split("\t"))
                     .filter(row -> row.length >= 3 && row[1].equals(city + " " + district))

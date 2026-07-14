@@ -22,6 +22,7 @@ dependencies {
     implementation 'org.geotools:gt-shapefile:35.0'
     implementation 'org.geotools:gt-epsg-hsql:35.0'
     implementation 'org.springframework.ai:spring-ai-starter-model-google-genai'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
 }
