@@ -45,7 +45,7 @@ public class CityAnalysisService {
                 var aiSummary = ai.analyzeDomain(old.domain(), json);
                 if (aiSummary.isPresent()) {
                     agents.add(new AgentAnalysis(old.domain(), old.score(), aiSummary.get(),
-                            old.problems(), old.suggestions(), old.warnings()));
+                            old.problems(), old.suggestions(), List.of()));
                 } else {
                     agents.add(old);
                     anyFailed = true;

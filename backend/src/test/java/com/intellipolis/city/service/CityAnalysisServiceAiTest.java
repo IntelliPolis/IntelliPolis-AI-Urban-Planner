@@ -34,4 +34,11 @@ class CityAnalysisServiceAiTest {
         var result = service.create(service.sample());
         assertThat(result.warnings()).isNotEmpty();
     }
+
+    @Test
+    void aiSuccessClearsWarnings() {
+        given(ai.analyzeDomain(any(), any())).willReturn(Optional.of("AI 생성 요약"));
+        var result = service.create(service.sample());
+        assertThat(result.agentAnalyses()).allMatch(a -> a.warnings().isEmpty());
+    }
 }
