@@ -28,13 +28,19 @@ public final class CityContracts {
   @NotNull @PositiveOrZero Long totalBudget,
   @NotNull @Size(max=10,message="우선 목표는 최대 10개까지 입력할 수 있습니다.") List<@NotBlank String> priorityGoals,
   @NotNull @Valid MapCoordinate mapCenter,@NotNull List<@Valid MapCoordinate> boundary,
-  @Size(max=20,message="후보지는 최대 20개까지 입력할 수 있습니다.") List<@Valid MapCoordinate> candidateSites) {}
+  @Size(max=20,message="후보지는 최대 20개까지 입력할 수 있습니다.") List<@Valid MapCoordinate> candidateSites,
+  @Size(max=20,message="교통 관측 링크는 최대 20개까지 입력할 수 있습니다.") List<RoadObservation> roadObservations) {}
+ public record RoadObservation(String linkId,String roadName,Double speedKmh,Double volume,
+  String intersectionName,Double queueLength,Long pedestrianCount,List<List<Double>> coordinates) {}
  public record CityScores(int traffic,int environment,int economy,int living,int overall) {}
  public record UrbanProblem(String title,String description,Severity severity,String evidence) {}
  public record UrbanSuggestion(String title,String description,String expectedEffect,CostLevel estimatedCostLevel) {}
  public record AgentAnalysis(AnalysisDomain domain,int score,String summary,List<UrbanProblem> problems,List<UrbanSuggestion> suggestions,List<String> warnings) {}
  public record PlannedFacility(String id,String name,FacilityType facilityType,PlanStatus status,Double longitude,Double latitude,Double height,Long estimatedCost,String reason) {}
- public record PlannedRoad(String id,String name,RoadType roadType,PlanStatus status,List<List<Double>> coordinates,String reason) {}
+ public record PlannedRoad(String id,String name,RoadType roadType,PlanStatus status,List<List<Double>> coordinates,String reason,
+  RoadImprovementType improvementType,FeasibilityLevel feasibility,String evidence,String landImpact,List<String> requiredStudies) {
+  public PlannedRoad(String id,String name,RoadType roadType,PlanStatus status,List<List<Double>> coordinates,String reason){this(id,name,roadType,status,coordinates,reason,RoadImprovementType.DEMAND_MANAGEMENT,FeasibilityLevel.MEDIUM,"추가 교통조사 필요","기존 도로 운영 범위",List.of("현장 교통량 조사"));}
+ }
  public record PlannedZone(String id,String name,ZoneType zoneType,PlanStatus status,List<List<Double>> coordinates,String reason) {}
  public record ImplementationPhase(int order,String name,String description) {}
  public record CityPlan(PlanType planType,String name,String summary,String purpose,List<PlannedFacility> facilities,List<PlannedRoad> roads,List<PlannedZone> zones,Long estimatedCost,List<String> benefits,List<String> tradeOffs,List<ImplementationPhase> phases,CityScores expectedScores) {}
