@@ -32,14 +32,20 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.geom.PrecisionModel;
 import org.locationtech.jts.index.strtree.STRtree;
-import org.locationtech.jts.operation.union.CascadedPolygonUnion;
+import org.locationtech.jts.operation.overlayng.UnaryUnionNG;
+import org.locationtech.jts.geom.prep.PreparedGeometry;
+import org.locationtech.jts.geom.prep.PreparedGeometryFactory;
+import org.locationtech.jts.io.WKBReader;
+import org.locationtech.jts.io.WKBWriter;
 import org.locationtech.jts.simplify.TopologyPreservingSimplifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
 public class SpatialDataService {
+    private static final double SEARCH_RADIUS_M = 3000;
     private static final CoordinateReferenceSystem WGS84;
     private static final Map<String, String> CADASTRAL = Map.of("부산광역시", "LSMD_CONT_LDREG_부산.zip");
     private static final Map<String, String> CITY_CODES = Map.of("부산광역시", "26000");
@@ -52,6 +58,7 @@ public class SpatialDataService {
     private final Path cache;
     private final Map<String, DistrictBoundary> boundaryCache = new ConcurrentHashMap<>();
     private final Map<String, Geometry> boundaryGeometryCache = new ConcurrentHashMap<>();
+    private final Map<String, PreparedGeometry> preparedBoundaryCache = new ConcurrentHashMap<>();
     private final Map<CandidateKey, SpatialCandidates> candidateCache = new ConcurrentHashMap<>();
     public SpatialDataService(@Value("${app.urban-data.raw-path:data/raw}") String rawPath) {
         raw = Path.of(rawPath);
@@ -73,7 +80,7 @@ public class SpatialDataService {
             List<Geometry> facilities = loadFacilities(city, longitude, latitude, warnings);
             List<Geometry> zoning = loadZoning(longitude, latitude);
             List<ParcelCandidate> parcels = loadParcels(cadastral, longitude, latitude, facilities, zoning);
-            warnings.add("선택 지점 반경 약 1.5km에서 500㎡ 이상이며 도시계획시설과 겹치지 않는 필지를 골랐습니다.");
+            warnings.add("선택 지점 반경 약 3km에서 500㎡ 이상이며 도시계획시설과 겹치지 않는 필지를 골랐습니다.");
             warnings.add("국토계획/도시지역 전체데이터와 겹치는 필지만 후보로 사용했습니다.");
             return new SpatialCandidates(city, district, parcels.size(), facilities.size(), zoning.size(), parcels.stream().limit(20).toList(), warnings);
         } catch (Exception e) {
@@ -88,7 +95,8 @@ public class SpatialDataService {
     public boolean contains(String city, String district, double longitude, double latitude) {
         String key = city + "/" + district;
         boundary(city, district);
-        return boundaryGeometryCache.get(key).covers(new GeometryFactory().createPoint(new Coordinate(longitude, latitude)));
+        PreparedGeometry prepared=preparedBoundaryCache.computeIfAbsent(key,k->PreparedGeometryFactory.prepare(boundaryGeometryCache.get(k)));
+        return prepared.covers(new GeometryFactory().createPoint(new Coordinate(longitude, latitude)));
     }
 
     private DistrictBoundary loadBoundary(String city, String district) {
@@ -100,6 +108,8 @@ public class SpatialDataService {
                     .filter(row -> row.length >= 3 && row[1].equals(city + " " + district))
                     .map(row -> row[0].substring(0, 5)).findFirst()
                     .orElseThrow(() -> new IOException("법정동코드를 찾지 못했습니다."));
+            Path boundaryFile=cache.resolve(CITY_CODES.get(city)).resolve("boundaries").resolve(prefix+".wkb");
+            if(Files.exists(boundaryFile))return boundary(city,district,new WKBReader().read(Files.readAllBytes(boundaryFile)));
             Path dir = cache.resolve(CITY_CODES.get(city)).resolve("cadastral");
             extractZip(raw.resolve("cadastral").resolve(filename), dir);
             DataStore store = dataStore(firstShapefile(dir));
@@ -116,12 +126,10 @@ public class SpatialDataService {
                     }
                 }
                 if (parcels.isEmpty()) throw new IOException("구 경계에 사용할 필지가 없습니다.");
-                Geometry merged = TopologyPreservingSimplifier.simplify(CascadedPolygonUnion.union(parcels), 15);
+                Geometry merged = TopologyPreservingSimplifier.simplify(UnaryUnionNG.union(parcels,new PrecisionModel(1)), 15);
                 Geometry wgs = JTS.transform(merged, CRS.findMathTransform(source.getSchema().getCoordinateReferenceSystem(), WGS84, true));
-                Envelope bounds = wgs.getEnvelopeInternal();
-                boundaryGeometryCache.put(city + "/" + district, wgs);
-                return new DistrictBoundary(city, district, geometryType(wgs), coordinates(wgs),
-                        new double[]{bounds.getMinX(), bounds.getMinY(), bounds.getMaxX(), bounds.getMaxY()});
+                Files.createDirectories(boundaryFile.getParent());Files.write(boundaryFile,new WKBWriter().write(wgs));
+                return boundary(city,district,wgs);
             } finally { store.dispose(); }
         } catch (Exception e) { throw new SpatialDataException("구 경계를 만들지 못했습니다.", e); }
     }
@@ -161,7 +169,7 @@ public class SpatialDataService {
             MathTransform fromWgs = CRS.findMathTransform(WGS84, crs, true);
             MathTransform toWgs = CRS.findMathTransform(crs, WGS84, true);
             Geometry center = JTS.transform(new GeometryFactory().createPoint(new Coordinate(lon, lat)), fromWgs);
-            Envelope box = new Envelope(center.getCoordinate()); box.expandBy(1500);
+            Envelope box = new Envelope(center.getCoordinate()); box.expandBy(SEARCH_RADIUS_M);
             try (var features = source.getFeatures(query(source, box)).features()) {
                 while (features.hasNext()) {
                     SimpleFeature feature = features.next();
@@ -179,7 +187,19 @@ public class SpatialDataService {
             }
         } finally { store.dispose(); }
         result.sort(Comparator.comparingLong(ParcelCandidate::distanceM).thenComparing(Comparator.comparingLong(ParcelCandidate::areaM2).reversed()));
-        return result;
+        return diverse(result);
+    }
+
+    private DistrictBoundary boundary(String city,String district,Geometry geometry){Envelope bounds=geometry.getEnvelopeInternal();boundaryGeometryCache.put(city+"/"+district,geometry);return new DistrictBoundary(city,district,geometryType(geometry),coordinates(geometry),new double[]{bounds.getMinX(),bounds.getMinY(),bounds.getMaxX(),bounds.getMaxY()});}
+
+    private List<ParcelCandidate> diverse(List<ParcelCandidate> candidates) {
+        List<ParcelCandidate> selected = new ArrayList<>();
+        for (ParcelCandidate candidate : candidates) {
+            boolean nearby = selected.stream().anyMatch(old -> Math.hypot((old.longitude()-candidate.longitude())*88,(old.latitude()-candidate.latitude())*111)<.5);
+            if (!nearby) selected.add(candidate);
+            if (selected.size() == 20) break;
+        }
+        return selected;
     }
 
     static STRtree spatialIndex(List<Geometry> geometries) {
@@ -212,7 +232,7 @@ public class SpatialDataService {
             MathTransform fromWgs = CRS.findMathTransform(WGS84, crs, true);
             MathTransform toWgs = CRS.findMathTransform(crs, WGS84, true);
             Geometry center = JTS.transform(new GeometryFactory().createPoint(new Coordinate(lon, lat)), fromWgs);
-            Envelope box = new Envelope(center.getCoordinate()); box.expandBy(1500);
+            Envelope box = new Envelope(center.getCoordinate()); box.expandBy(SEARCH_RADIUS_M);
             List<Geometry> result = new ArrayList<>();
             try (var features = source.getFeatures(query(source, box)).features()) {
                 while (features.hasNext()) {
@@ -239,7 +259,7 @@ public class SpatialDataService {
                     MathTransform fromWgs = CRS.findMathTransform(WGS84, crs, true);
                     MathTransform toWgs = CRS.findMathTransform(crs, WGS84, true);
                     Geometry center = JTS.transform(new GeometryFactory().createPoint(new Coordinate(lon, lat)), fromWgs);
-                    Envelope box = new Envelope(center.getCoordinate()); box.expandBy(1500);
+                    Envelope box = new Envelope(center.getCoordinate()); box.expandBy(SEARCH_RADIUS_M);
                     try (var features = source.getFeatures(query(source, box)).features()) {
                         while (features.hasNext()) {
                             Geometry geometry = (Geometry) features.next().getDefaultGeometry();

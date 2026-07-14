@@ -10,6 +10,7 @@ class CityScoreCalculatorTest {
  private PlannedFacility f(FacilityType t,long cost){return new PlannedFacility("id","시설",t,PlanStatus.PROPOSED,129.1,35.1,0d,cost,"검토");}
  @Test void currentScoresStayInRange(){var s=c.current(request());assertThat(List.of(s.traffic(),s.environment(),s.economy(),s.living(),s.overall())).allMatch(x->x>=0&&x<=100);}
  @Test void currentScoreIsCalculated(){assertThat(c.current(request()).overall()).isPositive();}
+ @Test void missingDistancesAreNotTreatedAsMeasuredZero(){var r=request();var missing=new CityAnalysisRequest(r.cityName(),r.districtName(),r.population(),r.areaKm2(),r.elderlyRatio(),r.youthRatio(),r.parkAreaRatio(),r.hospitalCount(),r.schoolCount(),r.transitHubCount(),0d,0d,0d,r.congestedRoads(),r.totalBudget(),r.priorityGoals(),r.mapCenter(),r.boundary(),r.candidateSites(),r.roadObservations());assertThat(c.current(missing).traffic()).isLessThanOrEqualTo(83);}
  @Test void overBudgetLowersEconomy(){assertThat(c.planned(request(),List.of(),101).economy()).isLessThan(c.planned(request(),List.of(),100).economy());}
  @Test void parkRaisesEnvironment(){assertThat(c.planned(request(),List.of(f(FacilityType.PARK,10)),10).environment()).isGreaterThan(c.current(request()).environment());}
  @Test void hospitalRaisesLiving(){assertThat(c.planned(request(),List.of(f(FacilityType.HOSPITAL,10)),10).living()).isGreaterThan(c.current(request()).living());}

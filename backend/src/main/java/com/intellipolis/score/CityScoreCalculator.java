@@ -9,9 +9,9 @@ import java.util.List;
 @Component
 public class CityScoreCalculator {
  public CityScores current(CityAnalysisRequest r){
-  int traffic=clamp(80-(int)(r.averageTransitDistanceKm()*12)+Math.min(15,r.transitHubCount()*2)-r.congestedRoads().size()*4);
-  int environment=clamp((int)(45+r.parkAreaRatio()*3-r.averageParkDistanceKm()*10));
-  int living=clamp(45+Math.min(18,r.hospitalCount()*2)+Math.min(18,r.schoolCount())-(int)(r.averageHospitalDistanceKm()*8)-(r.elderlyRatio()>25?5:0));
+  int traffic=clamp(68-distancePenalty(r.averageTransitDistanceKm(),.5,12)+Math.min(15,r.transitHubCount()*2)-r.congestedRoads().size()*4);
+  int environment=clamp(45+(int)(r.parkAreaRatio()*3)-distancePenalty(r.averageParkDistanceKm(),.5,10));
+  int living=clamp(45+Math.min(18,r.hospitalCount()*2)+Math.min(18,r.schoolCount())-distancePenalty(r.averageHospitalDistanceKm(),1,8)-(r.elderlyRatio()>25?5:0));
   int economy=clamp(75+(r.totalBudget()>0?5:0));
   return scores(traffic,environment,economy,living);
  }
@@ -25,5 +25,6 @@ public class CityScoreCalculator {
   return scores(clamp(b.traffic()+(int)transit*6),clamp(b.environment()+(int)parks*7),economy,clamp(b.living()+(int)hospitals*7+(int)publicServices*4));
  }
  private CityScores scores(int t,int e,int c,int l){ return new CityScores(t,e,c,l,Math.round((t+e+c+l)/4f)); }
+ private int distancePenalty(double distance,double standard,int rate){return distance<=0?0:(int)(Math.max(0,distance-standard)*rate);}
  public int clamp(int n){ return Math.max(0,Math.min(100,n)); }
 }

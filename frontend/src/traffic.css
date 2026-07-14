@@ -3,3 +3,4 @@
 .traffic-review h2{font:28px Georgia}
 .traffic-review p{display:flex;justify-content:space-between;border-top:1px solid #ffffff18;padding:10px 0;margin:0;font-size:12px}
 .traffic-review span{color:#aebdb8}
+.analysis-progress{grid-column:1/-1;height:8px;background:#e7e1d4;position:relative;overflow:hidden}.analysis-progress span{display:block;height:100%;background:#b49452;transition:width .25s}.analysis-progress b{position:absolute;right:6px;top:-17px;font-size:10px;color:#776137}

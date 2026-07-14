@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
@@ -28,13 +29,14 @@ public class TrafficDataService {
  }
  private TrafficSummary busan(String city,String district,double lon,double lat,String hour){
   try{
-   JsonNode links=get(LINK_URL,Map.of("pageNo","1","numOfRows","10000"));
-   JsonNode intersections=get(INTERSECTION_URL,Map.of("pageNo","1","numOfRows","1000","yyyyMMdd",hour.substring(0,8),"hour",hour.substring(8)));
+   var linksFuture=CompletableFuture.supplyAsync(()->get(LINK_URL,Map.of("pageNo","1","numOfRows","10000")));
+   var intersectionsFuture=CompletableFuture.supplyAsync(()->get(INTERSECTION_URL,Map.of("pageNo","1","numOfRows","1000","yyyyMMdd",hour.substring(0,8),"hour",hour.substring(8))));
+   JsonNode links=linksFuture.join(),intersections=intersectionsFuture.join();
    List<LinkRow> all=new ArrayList<>();JsonNode items=links.path("content").path("items");
    if(items.isArray())for(JsonNode n:items)all.add(new LinkRow(text(n,"lkId"),text(n,"roadNm"),text(n,"bgngNodeNm"),text(n,"endNodeNm"),number(n,"spd"),number(n,"vol")));
    Map<String,IntersectionRow> ix=intersections(intersections);
    List<LinkRow> slow=all.stream().filter(x->x.speed()<20).sorted(Comparator.comparingDouble(LinkRow::speed)).toList();
-   Map<String,List<List<Double>>> shapes=geometry.coordinates(slow.stream().map(LinkRow::id).collect(java.util.stream.Collectors.toSet()));
+   Map<String,List<List<Double>>> shapes=geometry.coordinates(all.stream().map(LinkRow::id).collect(java.util.stream.Collectors.toSet()));
    List<RoadSpeed> nearby=slow.stream().filter(x->inArea(shapes.get(x.id()),lon,lat)).limit(20).map(x->road(x,ix,shapes.get(x.id()))).toList();
    if(nearby.isEmpty())nearby=slow.stream().limit(20).map(x->road(x,ix,shapes.get(x.id()))).toList();
    double average=all.stream().mapToDouble(LinkRow::speed).filter(x->x>0).average().orElse(0);
@@ -55,7 +57,8 @@ public class TrafficDataService {
  }
  private void collect(JsonNode n,List<RoadSpeed> out){if(n==null)return;if(n.isArray()){n.forEach(x->collect(x,out));return;}if(!n.isObject())return;String id=text(n,"linkId","linkid","linkNo"),s=text(n,"speed","spd");if(id!=null&&s!=null)try{out.add(new RoadSpeed(id,blank(text(n,"roadName","roadname","roadNm"),"도로명 없음"),Double.parseDouble(s),0,null,null,null,List.of()));}catch(NumberFormatException ignored){}n.properties().forEach(x->collect(x.getValue(),out));}
  private boolean inArea(List<List<Double>> c,double lon,double lat){return c!=null&&c.stream().anyMatch(p->p.size()>1&&Math.abs(p.get(0)-lon)<.08&&Math.abs(p.get(1)-lat)<.06);}
- private boolean same(String a,String b){return a!=null&&b!=null&&!a.isBlank()&&!b.isBlank()&&(a.contains(b)||b.contains(a));}
+ private boolean same(String a,String b){String x=intersectionKey(a),y=intersectionKey(b);return x.length()>1&&y.length()>1&&(x.contains(y)||y.contains(x));}
+ private String intersectionKey(String value){return value==null?"":value.replaceAll("[^0-9A-Za-z가-힣]","").replaceFirst("(교차로|사거리|삼거리|로터리)$","");}
  private String text(JsonNode n,String...names){for(String name:names){JsonNode v=n.get(name);if(v!=null&&!v.isNull()&&!v.asText().isBlank())return v.asText();}return null;}
  private double number(JsonNode n,String name){JsonNode v=n.get(name);return v==null||v.isNull()?0:v.asDouble();}
  private String blank(String value,String fallback){return value==null||value.isBlank()?fallback:value;}
