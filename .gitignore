@@ -1,12 +1,21 @@
 
+.env
+.env.*
+!.env.example
+.idea/
+.vscode/
+node_modules/
+dist/
+build/
+.gradle/
+out/
+*.log
+
 backend/.gradle-cache/
 backend/.gradle/
 backend/build/
 backend/data/raw/
 backend/data/cache/
-.idea/
-.vscode/
 backend/bin/
 frontend/dist/
-*.log
 *.tsbuildinfo

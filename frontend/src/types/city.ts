@@ -7,7 +7,7 @@ export type FacilityType="HOSPITAL"|"PARK"|"SCHOOL"|"TRANSIT_HUB"|"CULTURE"|"PUB
 export type RoadType="ROAD"|"BUS"|"BRT"|"SUBWAY"|"PEDESTRIAN"|"BICYCLE";
 export type ZoneType="MIXED_USE"|"RESIDENTIAL"|"COMMERCIAL"|"GREEN"|"REDEVELOPMENT";
 export interface MapCenter { latitude:number; longitude:number }
-export interface CityAnalysisRequest { cityName:string; districtName:string; population:number; areaKm2:number; elderlyRatio:number; youthRatio:number; parkAreaRatio:number; hospitalCount:number; schoolCount:number; transitHubCount:number; averageHospitalDistanceKm:number; averageParkDistanceKm:number; averageTransitDistanceKm:number; congestedRoads:string[]; totalBudget:number; priorityGoals:string[]; mapCenter:MapCenter; boundary:MapCenter[] }
+export interface CityAnalysisRequest { cityName:string; districtName:string; population:number; areaKm2:number; elderlyRatio:number; youthRatio:number; parkAreaRatio:number; hospitalCount:number; schoolCount:number; transitHubCount:number; averageHospitalDistanceKm:number; averageParkDistanceKm:number; averageTransitDistanceKm:number; congestedRoads:string[]; totalBudget:number; priorityGoals:string[]; mapCenter:MapCenter; boundary:MapCenter[]; candidateSites:MapCenter[] }
 export interface CityScores { traffic:number; environment:number; economy:number; living:number; overall:number }
 export interface UrbanProblem { title:string; description:string; severity:Severity; evidence:string }
 export interface UrbanSuggestion { title:string; description:string; expectedEffect:string; estimatedCostLevel:CostLevel }

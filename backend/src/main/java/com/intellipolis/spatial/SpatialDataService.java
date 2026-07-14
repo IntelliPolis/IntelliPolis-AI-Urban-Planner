@@ -32,6 +32,7 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.MultiPolygon;
 import org.locationtech.jts.geom.Polygon;
+import org.locationtech.jts.index.strtree.STRtree;
 import org.locationtech.jts.operation.union.CascadedPolygonUnion;
 import org.locationtech.jts.simplify.TopologyPreservingSimplifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -56,12 +57,19 @@ public class SpatialDataService {
     private final Path raw;
     private final Path cache;
     private final Map<String, DistrictBoundary> boundaryCache = new ConcurrentHashMap<>();
+    private final Map<String, Geometry> boundaryGeometryCache = new ConcurrentHashMap<>();
+    private final Map<CandidateKey, SpatialCandidates> candidateCache = new ConcurrentHashMap<>();
     public SpatialDataService(@Value("${app.urban-data.raw-path:data/raw}") String rawPath) {
         raw = Path.of(rawPath);
         cache = raw.resolveSibling("cache/spatial");
     }
 
     public SpatialCandidates candidates(String city, String district, double longitude, double latitude) {
+        return candidateCache.computeIfAbsent(new CandidateKey(city, district, longitude, latitude),
+                ignored -> loadCandidates(city, district, longitude, latitude));
+    }
+
+    private SpatialCandidates loadCandidates(String city, String district, double longitude, double latitude) {
         List<String> warnings = new ArrayList<>();
         try {
             String filename = CADASTRAL.get(city);
@@ -81,6 +89,12 @@ public class SpatialDataService {
 
     public DistrictBoundary boundary(String city, String district) {
         return boundaryCache.computeIfAbsent(city + "/" + district, ignored -> loadBoundary(city, district));
+    }
+
+    public boolean contains(String city, String district, double longitude, double latitude) {
+        String key = city + "/" + district;
+        boundary(city, district);
+        return boundaryGeometryCache.get(key).covers(new GeometryFactory().createPoint(new Coordinate(longitude, latitude)));
     }
 
     private DistrictBoundary loadBoundary(String city, String district) {
@@ -111,6 +125,7 @@ public class SpatialDataService {
                 Geometry merged = TopologyPreservingSimplifier.simplify(CascadedPolygonUnion.union(parcels), 15);
                 Geometry wgs = JTS.transform(merged, CRS.findMathTransform(source.getSchema().getCoordinateReferenceSystem(), WGS84, true));
                 Envelope bounds = wgs.getEnvelopeInternal();
+                boundaryGeometryCache.put(city + "/" + district, wgs);
                 return new DistrictBoundary(city, district, geometryType(wgs), coordinates(wgs),
                         new double[]{bounds.getMinX(), bounds.getMinY(), bounds.getMaxX(), bounds.getMaxY()});
             } finally { store.dispose(); }
@@ -143,6 +158,8 @@ public class SpatialDataService {
 
     private List<ParcelCandidate> loadParcels(Path dir, double lon, double lat, List<Geometry> facilities, List<Geometry> zoning) throws Exception {
         List<ParcelCandidate> result = new ArrayList<>();
+        STRtree facilityIndex = spatialIndex(facilities);
+        STRtree zoningIndex = spatialIndex(zoning);
         DataStore store = dataStore(firstShapefile(dir));
         try {
             SimpleFeatureSource source = store.getFeatureSource(store.getTypeNames()[0]);
@@ -157,9 +174,9 @@ public class SpatialDataService {
                     Geometry geometry = (Geometry) feature.getDefaultGeometry();
                     if (geometry == null || geometry.isEmpty() || geometry.getArea() < 500) continue;
                     Geometry wgsGeometry = JTS.transform(geometry, toWgs);
-                    if (facilities.stream().anyMatch(wgsGeometry::intersects)) continue;
+                    if (intersectsAny(facilityIndex, wgsGeometry)) continue;
                     Geometry interiorPoint = wgsGeometry.getInteriorPoint();
-                    if (zoning.stream().noneMatch(zone -> zone.covers(interiorPoint))) continue;
+                    if (!coveredByAny(zoningIndex, interiorPoint)) continue;
                     Coordinate point = interiorPoint.getCoordinate();
                     Object pnu = feature.getAttribute("PNU");
                     result.add(new ParcelCandidate(pnu == null ? feature.getID() : pnu.toString(), point.x, point.y,
@@ -169,6 +186,25 @@ public class SpatialDataService {
         } finally { store.dispose(); }
         result.sort(Comparator.comparingLong(ParcelCandidate::distanceM).thenComparing(Comparator.comparingLong(ParcelCandidate::areaM2).reversed()));
         return result;
+    }
+
+    static STRtree spatialIndex(List<Geometry> geometries) {
+        STRtree index = new STRtree();
+        geometries.forEach(geometry -> index.insert(geometry.getEnvelopeInternal(), geometry));
+        index.build();
+        return index;
+    }
+
+    static boolean intersectsAny(STRtree index, Geometry geometry) {
+        for (Object candidate : index.query(geometry.getEnvelopeInternal()))
+            if (geometry.intersects((Geometry) candidate)) return true;
+        return false;
+    }
+
+    static boolean coveredByAny(STRtree index, Geometry geometry) {
+        for (Object candidate : index.query(geometry.getEnvelopeInternal()))
+            if (((Geometry) candidate).covers(geometry)) return true;
+        return false;
     }
 
     private List<Geometry> loadZoning(double lon, double lat) throws Exception {
@@ -281,6 +317,7 @@ public class SpatialDataService {
     }
 
     public record ParcelCandidate(String parcelId, double longitude, double latitude, long areaM2, long distanceM) {}
+    private record CandidateKey(String city, String district, double longitude, double latitude) {}
     public record SpatialCandidates(String cityName, String districtName, int eligibleParcelCount,
             int nearbyPlanningFacilityCount, int nearbyZoningPolygonCount, List<ParcelCandidate> candidates, List<String> warnings) {}
     public record DistrictBoundary(String cityName, String districtName, String type, Object coordinates, double[] bounds) {}
