@@ -8,8 +8,8 @@ public final class ExternalHttp {
 
     public static RestClient create() {
         var factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(5_000);
-        factory.setReadTimeout(15_000);
+        factory.setConnectTimeout(3_000);
+        factory.setReadTimeout(6_000);
         return RestClient.builder().requestFactory(factory).build();
     }
 }

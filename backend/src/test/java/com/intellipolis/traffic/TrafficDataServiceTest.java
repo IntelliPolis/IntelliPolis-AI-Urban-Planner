@@ -8,11 +8,11 @@ import org.junit.jupiter.api.Test;
 class TrafficDataServiceTest {
     @Test
     void missingKeyFailsBeforeCallingExternalApi() {
-        var service = new TrafficDataService("");
+        var service = new TrafficDataService("", "", new RoadGeometryService("data/raw"));
 
         assertThat(service.status().get("configured")).isEqualTo(false);
-        assertThatThrownBy(() -> service.summary("서울특별시", "강남구", 127, 37))
+        assertThatThrownBy(() -> service.summary("부산광역시", "해운대구", 129.16, 35.16))
                 .isInstanceOf(TrafficDataException.class)
-                .hasMessage("ITS API 키가 설정되지 않았습니다.");
+                .hasMessage("부산 교통 API 키가 설정되지 않았습니다.");
     }
 }

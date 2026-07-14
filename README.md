@@ -417,14 +417,14 @@ IntelliPolis에서 제공하는 도시계획 대안과 점수는 프로젝트용
 | 작성일 | 2026-07-13 |
 | 관련 Issue / PR | 미정 — Issue 생성 후 번호 연결 |
 | 스택 | Java 21 · Spring Boot 4.1.x · Spring AI 2.0.0 · Gemini(`gemini-3.1-flash-lite`) · React(Vite) · base 패키지 `com.study` |
-| MVP 분석 범위 | 서울특별시와 6개 광역시의 **자치구·군 단위** |
+| MVP 분석 범위 | 부산광역시의 **자치구·군 단위** |
 | 현재 구현 상태 | React UI·샘플 데이터 모드 구현 완료, 실제 공공데이터·Spring Boot·지도·AI 연동 전 |
 
 ---
 
 ## 1. 문제·사용자 (한 문장)
 
-- **사용자**: 서울 및 광역시의 자치구·군 단위 도시 현황을 비교하고 개선안을 검토해야 하는 도시계획 담당자·연구자·행정 실무자
+- **사용자**: 부산광역시의 자치구·군 단위 도시 현황을 비교하고 개선안을 검토해야 하는 도시계획 담당자·연구자·행정 실무자
 - **문제**: 인구·교통·병원·학교·공원 데이터가 여러 기관과 형식으로 흩어져 있어 같은 기준으로 비교하기 어렵고, 계산 결과를 계획안으로 설명하는 작업이 반복된다.
 - **한 문장 정의**:
 
@@ -551,8 +551,8 @@ com.study.intellipolis
 ```json
 {
   "regionCode": "1168000000",
-  "cityName": "서울특별시",
-  "districtName": "강남구",
+  "cityName": "부산광역시",
+  "districtName": "해운대구",
   "baseDate": "2026-06-30",
   "population": 560000,
   "areaKm2": 39.5,
@@ -572,8 +572,8 @@ com.study.intellipolis
 | 필드 | JSON 타입 | Java 타입 | 필수 | 검증·설명 |
 |---|---|---|---|---|
 | `regionCode` | string | `String` | ✅ | 10자리 행정구역 코드 |
-| `cityName` | string | `String` | ✅ | 1~30자, 예: `서울특별시` |
-| `districtName` | string | `String` | ✅ | 1~30자, 예: `강남구` |
+| `cityName` | string | `String` | ✅ | 1~30자, 예: `부산광역시` |
+| `districtName` | string | `String` | ✅ | 1~30자, 예: `해운대구` |
 | `baseDate` | string | `LocalDate` | ✅ | 데이터 기준일, `YYYY-MM-DD` |
 | `population` | integer | `Long` | ✅ | `0` 이상 |
 | `areaKm2` | number | `Double` | ✅ | `0` 초과 |
@@ -594,8 +594,8 @@ com.study.intellipolis
 {
   "id": 1,
   "regionCode": "1168000000",
-  "cityName": "서울특별시",
-  "districtName": "강남구",
+  "cityName": "부산광역시",
+  "districtName": "해운대구",
   "baseDate": "2026-06-30",
   "sampleData": false,
   "scoreVersion": "MVP_RULE_V1",
@@ -1007,8 +1007,8 @@ curl -X POST http://localhost:8080/api/analyses \
   -H "Content-Type: application/json" \
   -d '{
     "regionCode":"1168000000",
-    "cityName":"서울특별시",
-    "districtName":"강남구",
+    "cityName":"부산광역시",
+    "districtName":"해운대구",
     "baseDate":"2026-06-30",
     "population":560000,
     "areaKm2":39.5,
