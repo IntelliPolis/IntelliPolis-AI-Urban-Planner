@@ -18,9 +18,10 @@ public class CityAnalysisService {
  public CityAnalysisRequest sample(){return new CityAnalysisRequest("부산광역시","가상 해안구",320000L,48.5,22.4,14.2,8.1,12,34,8,2.3,1.8,1.1,List.of("해안대로","중앙로"),80000000000L,List.of("교통 혼잡 개선","녹지 접근성 향상"),new MapCoordinate(35.16,129.16),List.of());}
  public CityAnalysisResponse create(CityAnalysisRequest req){
   UUID id=UUID.randomUUID(); CityScores scores=calculator.current(req); List<String>warnings=new ArrayList<>();
-  var agents=new ArrayList<>(fallback(scores));
-  try{ai.explain(mapper.writeValueAsString(req)).ifPresentOrElse(summary->{var old=agents.get(0);agents.set(0,new AgentAnalysis(old.domain(),old.score(),summary,old.problems(),old.suggestions(),old.warnings()));},()->warnings.add("Gemini를 사용할 수 없어 규칙 기반 분석으로 대체했습니다."));}
-  catch(Exception e){warnings.add("Gemini를 사용할 수 없어 규칙 기반 분석으로 대체했습니다.");}
+  var fallbackAgents=fallback(scores);var agents=new ArrayList<AgentAnalysis>();boolean anyFailed=false;
+  try{String json=mapper.writeValueAsString(req);for(var old:fallbackAgents){var summary=ai.analyzeDomain(old.domain(),json);if(summary.isPresent())agents.add(new AgentAnalysis(old.domain(),old.score(),summary.get(),old.problems(),old.suggestions(),List.of()));else{agents.add(old);anyFailed=true;}}}
+  catch(Exception e){agents.clear();agents.addAll(fallbackAgents);anyFailed=true;}
+  if(anyFailed)warnings.add("일부 분야는 Gemini를 사용할 수 없어 규칙 기반 분석으로 대체했습니다.");
   var response=new CityAnalysisResponse(id,req.cityName(),req.districtName(),scores,agents,plans(req),warnings,OffsetDateTime.now());
   requests.put(id,req);return repository.save(response);
  }
@@ -33,7 +34,7 @@ public class CityAnalysisService {
  }
  public Map<String,String> explain(UUID id,PlanType type){
   CityPlan p=repository.find(id).plans().stream().filter(x->x.planType()==type).findFirst().orElseThrow(()->new IllegalArgumentException("계획안 타입이 올바르지 않습니다."));
-  try{return Map.of("explanation",ai.explain(mapper.writeValueAsString(p)).orElse("이 계획안은 현재 지표를 바탕으로 "+p.purpose()+"을 목표로 하는 규칙 기반 대안입니다."));}
+  try{return Map.of("explanation",ai.explainPlan(mapper.writeValueAsString(p)).orElse("이 계획안은 현재 지표를 바탕으로 "+p.purpose()+"을 목표로 하는 규칙 기반 대안입니다."));}
   catch(Exception e){return Map.of("explanation","계획 정보를 바탕으로 생성한 규칙 기반 설명입니다.");}
  }
  private List<AgentAnalysis> fallback(CityScores s){return List.of(agent(AnalysisDomain.TRAFFIC,s.traffic()),agent(AnalysisDomain.ENVIRONMENT,s.environment()),agent(AnalysisDomain.ECONOMY,s.economy()),agent(AnalysisDomain.LIVING,s.living()));}
