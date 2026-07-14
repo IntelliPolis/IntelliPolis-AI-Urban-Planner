@@ -57,6 +57,7 @@ public class SpatialDataService {
     private final Path raw;
     private final Path cache;
     private final Map<String, DistrictBoundary> boundaryCache = new ConcurrentHashMap<>();
+    private final Map<String, Geometry> boundaryGeometryCache = new ConcurrentHashMap<>();
     private final Map<CandidateKey, SpatialCandidates> candidateCache = new ConcurrentHashMap<>();
     public SpatialDataService(@Value("${app.urban-data.raw-path:data/raw}") String rawPath) {
         raw = Path.of(rawPath);
@@ -90,6 +91,12 @@ public class SpatialDataService {
         return boundaryCache.computeIfAbsent(city + "/" + district, ignored -> loadBoundary(city, district));
     }
 
+    public boolean contains(String city, String district, double longitude, double latitude) {
+        String key = city + "/" + district;
+        boundary(city, district);
+        return boundaryGeometryCache.get(key).covers(new GeometryFactory().createPoint(new Coordinate(longitude, latitude)));
+    }
+
     private DistrictBoundary loadBoundary(String city, String district) {
         try {
             String filename = CADASTRAL.get(city);
@@ -118,6 +125,7 @@ public class SpatialDataService {
                 Geometry merged = TopologyPreservingSimplifier.simplify(CascadedPolygonUnion.union(parcels), 15);
                 Geometry wgs = JTS.transform(merged, CRS.findMathTransform(source.getSchema().getCoordinateReferenceSystem(), WGS84, true));
                 Envelope bounds = wgs.getEnvelopeInternal();
+                boundaryGeometryCache.put(city + "/" + district, wgs);
                 return new DistrictBoundary(city, district, geometryType(wgs), coordinates(wgs),
                         new double[]{bounds.getMinX(), bounds.getMinY(), bounds.getMaxX(), bounds.getMaxY()});
             } finally { store.dispose(); }

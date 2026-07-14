@@ -27,7 +27,8 @@ public final class CityContracts {
   @NotNull @Size(max=20,message="혼잡 도로는 최대 20개까지 입력할 수 있습니다.") List<@NotBlank String> congestedRoads,
   @NotNull @PositiveOrZero Long totalBudget,
   @NotNull @Size(max=10,message="우선 목표는 최대 10개까지 입력할 수 있습니다.") List<@NotBlank String> priorityGoals,
-  @NotNull @Valid MapCoordinate mapCenter,@NotNull List<@Valid MapCoordinate> boundary) {}
+  @NotNull @Valid MapCoordinate mapCenter,@NotNull List<@Valid MapCoordinate> boundary,
+  @Size(max=20,message="후보지는 최대 20개까지 입력할 수 있습니다.") List<@Valid MapCoordinate> candidateSites) {}
  public record CityScores(int traffic,int environment,int economy,int living,int overall) {}
  public record UrbanProblem(String title,String description,Severity severity,String evidence) {}
  public record UrbanSuggestion(String title,String description,String expectedEffect,CostLevel estimatedCostLevel) {}
