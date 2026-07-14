@@ -1,8 +1,9 @@
 package com.intellipolis.external;
+import com.intellipolis.common.config.ExternalHttp;
 import java.net.URI;import java.util.*;
 import org.springframework.beans.factory.annotation.Value;import org.springframework.stereotype.Service;import org.springframework.web.client.RestClient;import org.springframework.web.util.UriComponentsBuilder;import tools.jackson.databind.JsonNode;
 @Service public class ExternalDataService {
- private final String publicKey,neisKey,seoulKey;private final RestClient http=RestClient.create();
+ private final String publicKey,neisKey,seoulKey;private final RestClient http=ExternalHttp.create();
  public ExternalDataService(@Value("${app.public-data.api-key:}")String p,@Value("${app.neis.api-key:}")String n,@Value("${app.seoul-data.api-key:}")String s){publicKey=p;neisKey=n;seoulKey=s;}
  public Map<String,Boolean> status(){return Map.of("publicData",!publicKey.isBlank(),"neis",!neisKey.isBlank(),"seoul",!seoulKey.isBlank());}
  public JsonNode hospitals(String sidoCode,String districtCode){require(publicKey,"공공데이터포털");return get(UriComponentsBuilder.fromUriString("https://apis.data.go.kr/B551182/hospInfoServicev2/getHospBasisList").queryParam("serviceKey",publicKey).queryParam("pageNo",1).queryParam("numOfRows",1000).queryParam("sidoCd",sidoCode).queryParam("sgguCd",districtCode).queryParam("_type","json").build().encode().toUri());}

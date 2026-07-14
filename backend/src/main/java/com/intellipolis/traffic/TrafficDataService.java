@@ -1,5 +1,6 @@
 package com.intellipolis.traffic;
 
+import com.intellipolis.common.config.ExternalHttp;
 import java.net.URI;
 import java.util.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,7 +11,7 @@ import tools.jackson.databind.JsonNode;
 
 @Service
 public class TrafficDataService {
- private final String apiKey; private final RestClient http=RestClient.create();
+ private final String apiKey; private final RestClient http=ExternalHttp.create();
  public TrafficDataService(@Value("${app.its.api-key:}")String apiKey){this.apiKey=apiKey;}
  public Map<String,Object> status(){return Map.of("configured",!apiKey.isBlank(),"provider","ITS 국가교통정보센터");}
  public TrafficSummary summary(String city,String district,double longitude,double latitude){
