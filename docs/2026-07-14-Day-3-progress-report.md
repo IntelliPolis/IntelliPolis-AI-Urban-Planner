@@ -132,150 +132,15 @@
 
 - 요청: `GET http://localhost:8080/api/health`
 - 확인 항목: HTTP 200, `status: UP`
-- 이미지: `![GET health 요청·응답](./images/day3-01-health.png)`
+- 이미지: !<img width="1402" height="930" alt="image" src="https://github.com/user-attachments/assets/8b0174c0-d27c-4cee-bcdf-89fc80ff5e83" />
+
 
 ### 스크린샷 2. 부산 강서구 도시요약
 
 - 요청: `GET http://localhost:8080/api/urban-data/summary`
 - Query Params: `city=부산광역시`, `district=강서구`
 - 확인 항목: 인구, 공원, 학교, 버스정류장, 병원 수, 예산, warnings
-- 이미지: `![GET urban summary 요청·응답](./images/day3-02-urban-summary.png)`
-
-### 스크린샷 3. 실제 혼잡 교통 링크
-
-- 요청: `GET http://localhost:8080/api/traffic/summary`
-- Query Params: `city=부산광역시`, `district=강서구`, `longitude=128.98`, `latitude=35.21`
-- 확인 항목: 평균속도, 혼잡 링크 수, 도로명, 링크 좌표
-- 이미지: `![GET traffic summary 요청·응답](./images/day3-03-traffic.png)`
-
-### 스크린샷 4. 공간 후보지
-
-- 요청: `GET http://localhost:8080/api/spatial/candidates`
-- Query Params: `city=부산광역시`, `district=강서구`, `longitude=128.98`, `latitude=35.21`
-- 확인 항목: 후보 필지 수, PNU, 면적, 거리, 좌표
-- 이미지: `![GET spatial candidates 요청·응답](./images/day3-04-spatial.png)`
-
-### 스크린샷 5. AI 도시계획 분석
-
-- 요청: `POST http://localhost:8080/api/city-analyses`
-- 확인 항목: HTTP 201, analysisId, 분야별 분석 4개, 계획안 3개, 시설·도로 사유, 예상 점수
-- 이미지: `![POST city analyses 요청·응답](./images/day3-05-city-analysis.png)`
-
-## Bruno 요청 예시
-
-### 1. 도시요약
-
-```http
-GET http://localhost:8080/api/urban-data/summary?city=부산광역시&district=강서구
-```
-
-응답에서 확인할 핵심 필드:
-
-```json
-{
-  "cityName": "부산광역시",
-  "districtName": "강서구",
-  "businessCount": 0,
-  "parkCount": 0,
-  "schoolCount": 0,
-  "busStopCount": 1537,
-  "hospitalCount": 129,
-  "population": 0,
-  "elderlyRatio": 0,
-  "youthRatio": 0,
-  "budgetByCategory": {},
-  "warnings": []
-}
-```
-
-위 예시의 `0` 값은 응답 구조 설명용이며 실제 값은 로컬 원본 데이터에 따라 달라진다.
-
-### 2. 도시계획 생성
-
-Bruno에서 `Body > JSON`을 선택하고 아래 예시를 사용한다.
-
-```http
-POST http://localhost:8080/api/city-analyses
-Content-Type: application/json
-```
-
-```json
-{
-  "cityName": "부산광역시",
-  "districtName": "강서구",
-  "population": 150000,
-  "areaKm2": 181.5,
-  "elderlyRatio": 18.5,
-  "youthRatio": 12.4,
-  "parkAreaRatio": 8.2,
-  "hospitalCount": 129,
-  "schoolCount": 50,
-  "transitHubCount": 1537,
-  "averageHospitalDistanceKm": 0,
-  "averageParkDistanceKm": 0,
-  "averageTransitDistanceKm": 0,
-  "congestedRoads": ["낙동북로", "공항로"],
-  "totalBudget": 80000000000,
-  "priorityGoals": ["교통 혼잡 개선", "생활시설 접근성 개선"],
-  "mapCenter": {
-    "latitude": 35.21,
-    "longitude": 128.98
-  },
-  "boundary": [],
-  "candidateSites": [
-    {"latitude": 35.205, "longitude": 128.975},
-    {"latitude": 35.220, "longitude": 128.990},
-    {"latitude": 35.190, "longitude": 128.960}
-  ],
-  "roadObservations": [
-    {
-      "linkId": "BRUNO-DEMO-1",
-      "roadName": "공항로",
-      "speedKmh": 14.2,
-      "volume": 1250,
-      "intersectionName": "공항입구교차로",
-      "queueLength": 42,
-      "pedestrianCount": 80,
-      "coordinates": [
-        [128.970, 35.205],
-        [128.985, 35.215]
-      ]
-    }
-  ]
-}
-```
-
-응답에서 확인할 핵심 구조:
-
-```json
-{
-  "analysisId": "UUID",
-  "cityName": "부산광역시",
-  "districtName": "강서구",
-  "currentScores": {
-    "traffic": 0,
-    "environment": 0,
-    "economy": 0,
-    "living": 0,
-    "overall": 0
-  },
-  "agentAnalyses": [
-    {"domain": "TRAFFIC"},
-    {"domain": "ENVIRONMENT"},
-    {"domain": "ECONOMY"},
-    {"domain": "LIVING"}
-  ],
-  "plans": [
-    {"planType": "BALANCED"},
-    {"planType": "ECO_FOCUSED"},
-    {"planType": "COST_EFFECTIVE"}
-  ],
-  "warnings": [],
-  "createdAt": "ISO_DATE_TIME"
-}
-```
-
-점수와 UUID는 서버가 계산·생성하므로 실제 응답 값을 캡처한다.
+- 이미지: !<img width="1405" height="941" alt="image" src="https://github.com/user-attachments/assets/381656b0-ac3c-41cc-b0e1-5b3c408662b6" />
 
 ## 문제와 해결 과정
 
@@ -314,7 +179,6 @@ Content-Type: application/json
 3. 부산 여러 구에서 교통·시설 제안의 결과와 사유를 교차 검증한다.
 4. Gemini 성공·부분 실패·전체 fallback 화면을 각각 확인한다.
 5. 팀원 변경과 최종 병합 후 프론트 빌드 및 백엔드 전체 테스트를 다시 실행한다.
-6. README 또는 Notion에 Day 3 보고서 링크를 공유한다.
 
 ---
 
