@@ -1,1 +1,0 @@
-export default function WarningPanel({warnings}:{warnings:string[]}){return warnings.length?<section className="warnings"><h2>경고 및 한계</h2><ul>{warnings.map((w,i)=><li key={i}>{w}</li>)}</ul></section>:null}
