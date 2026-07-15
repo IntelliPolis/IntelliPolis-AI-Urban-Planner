@@ -156,7 +156,15 @@ public class CityAnalysisService {
     private String facilityReason(FacilityType f, CityAnalysisRequest r) {
         return switch (f) {
             case TRANSIT_HUB -> r.averageTransitDistanceKm()>0?"주민의 평균 대중교통 접근거리가 " + r.averageTransitDistanceKm() + "km로 길어 환승 편의를 보완할 필요가 있습니다.":"현재 집계된 환승거점이 " + r.transitHubCount() + "개여서 교통 연결을 보완할 필요가 있습니다.";
-            case PARK -> r.averageParkDistanceKm()>0?"주민이 공원까지 평균 " + r.averageParkDistanceKm() + "km를 이동해야 하고, 공원 면적 비율도 " + r.parkAreaRatio() + "%에 그쳐 가까운 쉼터가 필요합니다.":"공원 면적 비율이 " + r.parkAreaRatio() + "%로 낮아 생활권 안에서 걸어갈 수 있는 쉼터를 보완합니다.";
+            case PARK -> {
+                double ratio = Math.round(r.parkAreaRatio() * 10.0) / 10.0;
+                double shortage = Math.max(0, Math.round((10.0 - ratio) * 10.0) / 10.0);
+                String areaExplanation = "현재 공원이 차지하는 면적은 분석 지역 전체 면적의 약 " + ratio + "%입니다. "
+                        + "분석 기준으로 사용한 10%보다 약 " + shortage + "%p 부족합니다.";
+                yield r.averageParkDistanceKm()>0
+                        ? areaExplanation + " 주민이 공원까지 평균 " + r.averageParkDistanceKm() + "km를 이동해야 하므로, 생활권 가까이에 걸어서 이용할 수 있는 녹지 쉼터를 보완합니다."
+                        : areaExplanation + " 따라서 주민이 일상에서 쉽게 걸어갈 수 있는 소규모 녹지 쉼터를 추가로 제안합니다.";
+            }
             case HOSPITAL -> r.averageHospitalDistanceKm()>0?"병원은 " + r.hospitalCount() + "개이며 평균 의료 접근거리가 " + r.averageHospitalDistanceKm() + "km여서 가까운 의료 거점이 필요합니다.":"현재 집계된 병원이 " + r.hospitalCount() + "개여서 의료 접근 취약 가능성을 보완합니다.";
             case SCHOOL -> "학교가 0개로 집계됐습니다. 데이터 누락 여부를 먼저 확인하고 실제 부족이 확인될 때만 검토합니다.";
             case PUBLIC_SERVICE -> "고령인구 비율 " + r.elderlyRatio() + "%에 따른 생활지원 수요를 근거로 검토";
