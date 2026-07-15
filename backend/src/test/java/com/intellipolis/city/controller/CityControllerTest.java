@@ -17,5 +17,7 @@ class CityControllerTest {
  @Test void analysisUsesFallback() throws Exception {mvc.perform(post("/api/city-analyses").contentType(MediaType.APPLICATION_JSON).content(mapper.writeValueAsBytes(service.sample()))).andExpect(status().isCreated()).andExpect(jsonPath("$.plans.length()").value(3)).andExpect(jsonPath("$.warnings[0]").exists());}
  @Test void validationFails() throws Exception {mvc.perform(post("/api/city-analyses").contentType(MediaType.APPLICATION_JSON).content("{}" )).andExpect(status().isBadRequest());}
  @Test void missingQueryParameterIs400() throws Exception {mvc.perform(get("/api/spatial/boundary")).andExpect(status().isBadRequest()).andExpect(jsonPath("$.status").value(400));}
+ @Test void blankQueryParameterIs400() throws Exception {mvc.perform(get("/api/spatial/candidates").param("city","").param("district","강서구")).andExpect(status().isBadRequest()).andExpect(jsonPath("$.status").value(400));}
+ @Test void unknownApiIs404() throws Exception {mvc.perform(get("/api/not-real")).andExpect(status().isNotFound()).andExpect(jsonPath("$.status").value(404));}
  @Test void missingIdIs404() throws Exception {mvc.perform(get("/api/city-analyses/"+UUID.randomUUID())).andExpect(status().isNotFound());}
 }
