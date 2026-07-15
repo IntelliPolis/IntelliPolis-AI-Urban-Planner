@@ -42,13 +42,10 @@
 
 ### 화면
 
-| AI 분석 결과 | 혼잡 도로 분석 |
-| --- | --- |
-| ![AI 분석 결과](images/정상5.png) | ![실측 교통](images/확장5.png) |
+<img width="1904" height="922" alt="image" src="https://github.com/user-attachments/assets/eed3e820-1cd0-4b57-ae82-611b611a781b" />
+<img width="1904" height="922" alt="image" src="https://github.com/user-attachments/assets/b9b64bb0-ff44-4778-90d3-91f9c459f5f9" />
+<img width="1904" height="922" alt="image" src="https://github.com/user-attachments/assets/f113176e-df48-48e7-8926-83857a5f0713" />
 
-| 공간 분석 | 시설 후보지 |
-| --- | --- |
-| ![공간 분석](images/정상3.png) | ![후보지 검증](images/확장7.png) |
 
 ## 현재 맞고 있는 가장 큰 문제
 
