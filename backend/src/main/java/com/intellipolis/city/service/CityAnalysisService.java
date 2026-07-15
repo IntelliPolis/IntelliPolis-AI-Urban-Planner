@@ -115,7 +115,7 @@ public class CityAnalysisService {
             available.remove(s);
             selected.add(s);
             int ordinal=(int)facilities.stream().filter(x->x.facilityType()==f).count()+1;
-            facilities.add(new PlannedFacility(UUID.randomUUID().toString(), facilityName(f, ordinal), f, PlanStatus.PROPOSED, s.longitude(), s.latitude(), f == FacilityType.PARK ? 8d : 24d, unit, facilityReason(f, r) + " 공간 데이터상 500㎡ 이상이고 기존 도시계획시설과 겹치지 않는 필지 중, 다른 제안과의 거리를 최대화한 우선 검토 후보지입니다."));
+            facilities.add(new PlannedFacility(UUID.randomUUID().toString(), facilityName(f, ordinal), f, PlanStatus.PROPOSED, s.longitude(), s.latitude(), f == FacilityType.PARK ? 12d : 32d, unit, facilityReason(f, r) + " 이 위치는 상권이나 버스정류장이 가까워 실제 이용 가능성이 있고, 500㎡ 이상이면서 기존 도시계획시설과 겹치지 않는 필지입니다. 다만 최종 위치는 현장 조사 후 확정해야 합니다."));
         }
         List<PlannedRoad> roads = (r.roadObservations() == null ? List.<RoadObservation>of() : r.roadObservations()).stream().filter(o -> o.coordinates() != null && o.coordinates().size() >= 2).limit(type == PlanType.COST_EFFECTIVE ? 2 : 4).map(o -> roadPlan(o, type)).toList();
         List<String> limits = new ArrayList<>();
@@ -138,7 +138,7 @@ public class CityAnalysisService {
         int parkByArea=r.parkAreaRatio()<10?quantity((10-r.parkAreaRatio())/2.5,4):0,parkByDistance=r.averageParkDistanceKm()>1.2?quantity((r.averageParkDistanceKm()-1.2)/.5,4):0;add(out,FacilityType.PARK,Math.max(parkByArea,parkByDistance));
         add(out,FacilityType.HOSPITAL,r.averageHospitalDistanceKm()>2?quantity((r.averageHospitalDistanceKm()-2)/.75,3):r.hospitalCount()==0?quantity(r.population()/150000d,3):0);
         add(out,FacilityType.SCHOOL,r.schoolCount()==0&&r.youthRatio()>10?quantity(r.population()*r.youthRatio()/100/15000d,3):0);
-        add(out,FacilityType.PUBLIC_SERVICE,r.elderlyRatio()>20?quantity((r.elderlyRatio()-20)/5,4):0);
+        // 구 평균 고령비율만으로 특정 필지에 공공건물을 제안할 수 없으므로 생활권별 인구 자료가 생길 때까지 배치하지 않는다.
         if (type == PlanType.ECO_FOCUSED)
             out.sort(Comparator.comparingInt(x -> x == FacilityType.PARK ? 0 : x == FacilityType.TRANSIT_HUB ? 1 : 2));
         return out;
@@ -155,10 +155,10 @@ public class CityAnalysisService {
 
     private String facilityReason(FacilityType f, CityAnalysisRequest r) {
         return switch (f) {
-            case TRANSIT_HUB -> r.averageTransitDistanceKm()>0?"평균 대중교통 접근거리 " + r.averageTransitDistanceKm() + "km와 환승거점 " + r.transitHubCount() + "개를 근거로 검토":"환승거점 " + r.transitHubCount() + "개를 근거로 검토(접근거리 미수집)";
-            case PARK -> r.averageParkDistanceKm()>0?"공원면적 비율 " + r.parkAreaRatio() + "%와 평균 공원 접근거리 " + r.averageParkDistanceKm() + "km를 근거로 검토":"공원면적 비율 " + r.parkAreaRatio() + "%를 근거로 검토(접근거리 미수집)";
-            case HOSPITAL -> r.averageHospitalDistanceKm()>0?"병원 " + r.hospitalCount() + "개와 평균 의료 접근거리 " + r.averageHospitalDistanceKm() + "km를 근거로 검토":"병원 " + r.hospitalCount() + "개를 근거로 검토(접근거리 미수집)";
-            case SCHOOL -> "학교 수가 0으로 집계되어 원자료 누락 여부를 먼저 확인한 뒤 검토";
+            case TRANSIT_HUB -> r.averageTransitDistanceKm()>0?"주민의 평균 대중교통 접근거리가 " + r.averageTransitDistanceKm() + "km로 길어 환승 편의를 보완할 필요가 있습니다.":"현재 집계된 환승거점이 " + r.transitHubCount() + "개여서 교통 연결을 보완할 필요가 있습니다.";
+            case PARK -> r.averageParkDistanceKm()>0?"주민이 공원까지 평균 " + r.averageParkDistanceKm() + "km를 이동해야 하고, 공원 면적 비율도 " + r.parkAreaRatio() + "%에 그쳐 가까운 쉼터가 필요합니다.":"공원 면적 비율이 " + r.parkAreaRatio() + "%로 낮아 생활권 안에서 걸어갈 수 있는 쉼터를 보완합니다.";
+            case HOSPITAL -> r.averageHospitalDistanceKm()>0?"병원은 " + r.hospitalCount() + "개이며 평균 의료 접근거리가 " + r.averageHospitalDistanceKm() + "km여서 가까운 의료 거점이 필요합니다.":"현재 집계된 병원이 " + r.hospitalCount() + "개여서 의료 접근 취약 가능성을 보완합니다.";
+            case SCHOOL -> "학교가 0개로 집계됐습니다. 데이터 누락 여부를 먼저 확인하고 실제 부족이 확인될 때만 검토합니다.";
             case PUBLIC_SERVICE -> "고령인구 비율 " + r.elderlyRatio() + "%에 따른 생활지원 수요를 근거로 검토";
             case CULTURE -> "문화시설 수요조사 후 검토";
         };
