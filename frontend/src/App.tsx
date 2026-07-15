@@ -57,7 +57,7 @@ function Dashboard({data,center,plans,selected,onSelect}:{data:Summary;center:[n
   </section>
   <div className="plan-picker refined-picker">{plans.map((p,i)=><button className={selected===i?"active":""} key={p.planType} onClick={()=>onSelect(i)}><span>{i===0?"⚖":i===1?"♧":"▦"}</span>{p.name}</button>)}</div>
   <section className="comparison-intro"><span/><div><small>CITY PLAN COMPARISON</small><h2>현재 도시와 AI 계획안을 한눈에 비교합니다.</h2><p>현재 도시와 AI 계획안을 지도에서 직접 비교해 더 나은 선택을 위한 근거를 확인하세요.</p></div><span/></section>
-  <section className="map-compare refined-map-compare"><MapView center={center} boundary={data.boundary} plan={null} title={`${data.districtName} 현재 배치`}/><MapView center={center} boundary={data.boundary} plan={plan} title={`${data.districtName} AI 개선 · ${plan?.name||""}`}/></section>
+  <section className="map-compare refined-map-compare"><MapView center={center} boundary={data.boundary} plan={plan} title={`${data.districtName} AI 개선지도 · ${plan?.name||""}`}/></section>
   {data.traffic&&<TrafficOverview roads={roads}/>}
   {plan&&<PlanDetails plan={plan}/>}
   {plan&&<DetailedReport plan={plan} roads={roads}/>}
