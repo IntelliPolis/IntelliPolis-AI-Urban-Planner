@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -47,6 +48,7 @@ import org.locationtech.jts.io.WKBReader;
 import org.locationtech.jts.io.WKBWriter;
 import org.locationtech.jts.simplify.TopologyPreservingSimplifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -64,13 +66,21 @@ public class SpatialDataService {
 
     private final Path raw;
     private final Path cache;
+    private final Path buildingsZip;
     private final Map<String, DistrictBoundary> boundaryCache = new ConcurrentHashMap<>();
     private final Map<String, Geometry> boundaryGeometryCache = new ConcurrentHashMap<>();
     private final Map<String, PreparedGeometry> preparedBoundaryCache = new ConcurrentHashMap<>();
     private final Map<CandidateKey, SpatialCandidates> candidateCache = new ConcurrentHashMap<>();
-    public SpatialDataService(@Value("${app.urban-data.raw-path:data/raw}") String rawPath) {
+    public SpatialDataService(String rawPath) { this(rawPath, ""); }
+
+    @Autowired
+    public SpatialDataService(@Value("${app.urban-data.raw-path:data/raw}") String rawPath,
+            @Value("${app.urban-data.buildings-zip:}") String buildingsZipPath) {
         raw = Path.of(rawPath);
         cache = raw.resolveSibling("cache/spatial");
+        buildingsZip = buildingsZipPath.isBlank()
+                ? Path.of(System.getProperty("user.home"), "Downloads", "AL_D010_26_20260709.zip")
+                : Path.of(buildingsZipPath);
     }
 
     public SpatialCandidates candidates(String city, String district) {
@@ -83,7 +93,7 @@ public class SpatialDataService {
         try {
             String filename = CADASTRAL.get(city);
             if (filename == null) return new SpatialCandidates(city, district, 0, 0, 0, 0, 0, List.of(), List.of("부산광역시만 지원합니다."));
-            Path candidateFile=cache.resolve(CITY_CODES.get(city)).resolve("candidates").resolve(districtPrefix(city,district)+"-v4.csv");
+            Path candidateFile=cache.resolve(CITY_CODES.get(city)).resolve("candidates").resolve(districtPrefix(city,district)+"-v8.csv");
             if(Files.exists(candidateFile))return readCandidates(city,district,candidateFile);
             Path cadastral = cache.resolve(CITY_CODES.get(city)).resolve("cadastral");
             extractZip(raw.resolve("cadastral").resolve(filename), cadastral);
@@ -91,13 +101,18 @@ public class SpatialDataService {
             List<Geometry> facilities = loadFacilities(city, districtGeometry, warnings);
             List<Geometry> zoning = loadZoning(districtGeometry);
             List<Geometry> activity = loadActivityPoints(district, districtGeometry);
-            List<ParcelCandidate> parcels = loadParcels(cadastral, districtPrefix(city,district), districtGeometry, facilities, zoning, activity);
-            double parkDistance=averageNearestKm(parcels,loadParkPoints(city,district,districtGeometry));
-            double transitDistance=averageNearestKm(parcels,loadBusStopPoints(city,district,districtGeometry));
+            java.util.Set<String> buildings = buildingParcels();
+            ParcelSelection parcels = loadParcels(cadastral, districtPrefix(city,district), districtGeometry, facilities, zoning, activity, buildings);
+            warnings.add(buildings.isEmpty()
+                    ? "GIS 건물통합정보 파일을 찾지 못해 기존 건물 필지 제외를 적용하지 못했습니다."
+                    : "부산 GIS 건물통합정보와 결합해 기존 건물이 없는 필지만 후보로 사용했습니다.");
+            double parkDistance=averageNearestKm(parcels.candidates(),loadParkPoints(city,district,districtGeometry));
+            double transitDistance=averageNearestKm(parcels.candidates(),loadBusStopPoints(city,district,districtGeometry));
             warnings.add("구 전체에서 500㎡ 이상이며 도시계획시설과 겹치지 않는 필지를 분석했습니다.");
             warnings.add("국토계획/도시지역 전체데이터와 겹치는 필지만 후보로 사용했습니다.");
             warnings.add("2026년 6월 법정동 인구를 반영해 사람이 실제로 거주하는 생활권 후보를 우선했습니다.");
-            SpatialCandidates result=new SpatialCandidates(city, district, parcels.size(), facilities.size(), zoning.size(), parkDistance, transitDistance, parcels.stream().limit(20).toList(), warnings);writeCandidates(candidateFile,result);return result;
+            warnings.add("공원·정류장 접근거리는 대표 생활권 후보 중심점에서 가장 가까운 시설까지의 직선거리 평균입니다.");
+            SpatialCandidates result=new SpatialCandidates(city, district, parcels.eligibleCount(), facilities.size(), zoning.size(), parkDistance, transitDistance, parcels.candidates(), warnings);writeCandidates(candidateFile,result);return result;
         } catch (Exception e) {
             throw new SpatialDataException("공간데이터를 읽지 못했습니다.", e);
         }
@@ -170,10 +185,10 @@ public class SpatialDataService {
     }
 
     private String districtPrefix(String city,String district)throws IOException{return Files.readAllLines(raw.resolve("법정동코드 전체자료.txt"),Charset.forName("MS949")).stream().map(line->line.split("\t")).filter(row->row.length>=3&&row[1].equals(city+" "+district)).map(row->row[0].substring(0,5)).findFirst().orElseThrow(()->new IOException("법정동코드를 찾지 못했습니다."));}
-    private SpatialCandidates readCandidates(String city,String district,Path file)throws IOException{List<String> lines=Files.readAllLines(file,StandardCharsets.UTF_8);String[] count=lines.getFirst().split(",");List<ParcelCandidate> candidates=lines.stream().skip(1).map(x->x.split(",")).map(x->new ParcelCandidate(x[0],Double.parseDouble(x[1]),Double.parseDouble(x[2]),Long.parseLong(x[3]))).toList();return new SpatialCandidates(city,district,Integer.parseInt(count[0]),Integer.parseInt(count[1]),Integer.parseInt(count[2]),Double.parseDouble(count[3]),Double.parseDouble(count[4]),candidates,List.of("구 전체에서 검증하고 분산한 후보지 캐시를 사용했습니다.","국토계획/도시지역 전체데이터와 겹치는 필지만 후보로 사용했습니다.","2026년 6월 법정동 인구를 반영해 사람이 실제로 거주하는 생활권 후보를 우선했습니다."));}
-    private void writeCandidates(Path file,SpatialCandidates value)throws IOException{Files.createDirectories(file.getParent());List<String> lines=new ArrayList<>();lines.add(value.eligibleParcelCount()+","+value.nearbyPlanningFacilityCount()+","+value.nearbyZoningPolygonCount()+","+value.averageParkDistanceKm()+","+value.averageTransitDistanceKm());value.candidates().forEach(x->lines.add(x.parcelId()+","+x.longitude()+","+x.latitude()+","+x.areaM2()));Files.write(file,lines,StandardCharsets.UTF_8);}
+    private SpatialCandidates readCandidates(String city,String district,Path file)throws IOException{List<String> lines=Files.readAllLines(file,StandardCharsets.UTF_8);String[] count=lines.getFirst().split(",");List<ParcelCandidate> candidates=lines.stream().skip(1).map(x->x.split(",")).map(x->new ParcelCandidate(x[0],Double.parseDouble(x[1]),Double.parseDouble(x[2]),Long.parseLong(x[3]),Integer.parseInt(x[4]),Long.parseLong(x[5]))).toList();return new SpatialCandidates(city,district,Integer.parseInt(count[0]),Integer.parseInt(count[1]),Integer.parseInt(count[2]),Double.parseDouble(count[3]),Double.parseDouble(count[4]),candidates,List.of("구 전체에서 검증하고 분산한 후보지 캐시를 사용했습니다.","국토계획/도시지역 전체데이터와 겹치는 필지만 후보로 사용했습니다.","부산 GIS 건물통합정보와 결합해 기존 건물이 없는 필지만 후보로 사용했습니다.","2026년 6월 법정동 인구와 생활 활동점을 시설별 입지 평가에 반영했습니다.","공원·정류장 접근거리는 대표 생활권 후보 중심점에서 가장 가까운 시설까지의 직선거리 평균입니다."));}
+    private void writeCandidates(Path file,SpatialCandidates value)throws IOException{Files.createDirectories(file.getParent());List<String> lines=new ArrayList<>();lines.add(value.eligibleParcelCount()+","+value.nearbyPlanningFacilityCount()+","+value.nearbyZoningPolygonCount()+","+value.averageParkDistanceKm()+","+value.averageTransitDistanceKm());value.candidates().forEach(x->lines.add(x.parcelId()+","+x.longitude()+","+x.latitude()+","+x.areaM2()+","+x.activityCount()+","+x.population()));Files.write(file,lines,StandardCharsets.UTF_8);}
 
-    private List<ParcelCandidate> loadParcels(Path dir, String prefix, Geometry district, List<Geometry> facilities, List<Geometry> zoning, List<Geometry> activity) throws Exception {
+    private ParcelSelection loadParcels(Path dir, String prefix, Geometry district, List<Geometry> facilities, List<Geometry> zoning, List<Geometry> activity, java.util.Set<String> buildingParcels) throws Exception {
         List<ScoredCandidate> result = new ArrayList<>();
         Map<String,Long> population = legalDongPopulation();
         STRtree facilityIndex = spatialIndex(facilities);
@@ -192,6 +207,7 @@ public class SpatialDataService {
                     SimpleFeature feature = features.next();
                     Object pnu = feature.getAttribute("PNU");
                     if(pnu==null||!pnu.toString().startsWith(prefix))continue;
+                    if(buildingParcels.contains(pnu.toString()))continue;
                     long residents=population.getOrDefault(pnu.toString().substring(0,10),0L);
                     if(!population.isEmpty()&&residents==0)continue;
                     Geometry geometry = (Geometry) feature.getDefaultGeometry();
@@ -205,12 +221,60 @@ public class SpatialDataService {
                     if (activityCount < MIN_ACTIVITY_POINTS) continue;
                     Coordinate point = interiorPoint.getCoordinate();
                     result.add(new ScoredCandidate(new ParcelCandidate(pnu.toString(), point.x, point.y,
-                            Math.round(geometry.getArea())), activityCount, residents));
+                            Math.round(geometry.getArea()),activityCount,residents), activityCount, residents));
                 }
             }
         } finally { store.dispose(); }
         result.sort(Comparator.comparingDouble(SpatialDataService::demandScore).reversed());
-        return diverse(result);
+        return new ParcelSelection(result.size(), diverse(result));
+    }
+
+    private java.util.Set<String> buildingParcels() throws IOException {
+        if (!Files.exists(buildingsZip)) return java.util.Set.of();
+        Path file = cache.resolve("26000").resolve("building-pnus-v1.txt");
+        if (Files.exists(file)) return new java.util.HashSet<>(Files.readAllLines(file, StandardCharsets.US_ASCII));
+        java.util.Set<String> result = new java.util.HashSet<>();
+        try (ZipFile zip = new ZipFile(buildingsZip.toFile())) {
+            ZipEntry dbf = zip.stream().filter(entry -> entry.getName().toLowerCase().endsWith(".dbf"))
+                    .findFirst().orElseThrow(() -> new IOException("건물 ZIP에 DBF 파일이 없습니다."));
+            try (InputStream input = new java.io.BufferedInputStream(zip.getInputStream(dbf))) {
+                byte[] header = input.readNBytes(32);
+                if (header.length != 32) throw new IOException("건물 DBF 헤더가 올바르지 않습니다.");
+                int records = littleEndianInt(header, 4);
+                int headerLength = littleEndianShort(header, 8);
+                int recordLength = littleEndianShort(header, 10);
+                int fieldOffset = 1;
+                int pnuOffset = -1;
+                int pnuLength = 0;
+                for (int read = 32; read < headerLength - 1; read += 32) {
+                    byte[] field = input.readNBytes(32);
+                    String name = new String(field, 0, 11, StandardCharsets.US_ASCII).replace("\0", "").trim();
+                    int length = Byte.toUnsignedInt(field[16]);
+                    if (name.equals("A2")) { pnuOffset = fieldOffset; pnuLength = length; }
+                    fieldOffset += length;
+                }
+                input.read();
+                if (pnuOffset < 0) throw new IOException("건물 DBF에서 필지번호(A2)를 찾지 못했습니다.");
+                byte[] record = new byte[recordLength];
+                for (int i = 0; i < records && input.readNBytes(record, 0, recordLength) == recordLength; i++) {
+                    if (record[0] == '*') continue;
+                    String pnu = new String(record, pnuOffset, pnuLength, StandardCharsets.US_ASCII).trim();
+                    if (pnu.startsWith("26") && pnu.length() == 19) result.add(pnu);
+                }
+            }
+        }
+        Files.createDirectories(file.getParent());
+        Files.write(file, result.stream().sorted().toList(), StandardCharsets.US_ASCII);
+        return result;
+    }
+
+    private static int littleEndianInt(byte[] bytes, int offset) {
+        return Byte.toUnsignedInt(bytes[offset]) | Byte.toUnsignedInt(bytes[offset + 1]) << 8
+                | Byte.toUnsignedInt(bytes[offset + 2]) << 16 | Byte.toUnsignedInt(bytes[offset + 3]) << 24;
+    }
+
+    private static int littleEndianShort(byte[] bytes, int offset) {
+        return Byte.toUnsignedInt(bytes[offset]) | Byte.toUnsignedInt(bytes[offset + 1]) << 8;
     }
 
     private Map<String,Long> legalDongPopulation() throws IOException {
@@ -445,8 +509,9 @@ public class SpatialDataService {
         }
     }
 
-    public record ParcelCandidate(String parcelId, double longitude, double latitude, long areaM2) {}
+    public record ParcelCandidate(String parcelId, double longitude, double latitude, long areaM2,int activityCount,long population) {public ParcelCandidate(String id,double lon,double lat,long area){this(id,lon,lat,area,0,0);}}
     record ScoredCandidate(ParcelCandidate candidate, int activityCount, long population) {}
+    record ParcelSelection(int eligibleCount, List<ParcelCandidate> candidates) {}
     private record CandidateKey(String city, String district) {}
     public record SpatialCandidates(String cityName, String districtName, int eligibleParcelCount,
             int nearbyPlanningFacilityCount, int nearbyZoningPolygonCount, double averageParkDistanceKm,

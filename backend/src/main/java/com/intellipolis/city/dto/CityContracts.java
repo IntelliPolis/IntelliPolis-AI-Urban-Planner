@@ -10,7 +10,8 @@ import java.util.UUID;
 public final class CityContracts {
  private CityContracts() {}
  public record MapCoordinate(@NotNull @DecimalMin("-90") @DecimalMax("90") Double latitude,
-  @NotNull @DecimalMin("-180") @DecimalMax("180") Double longitude) {
+  @NotNull @DecimalMin("-180") @DecimalMax("180") Double longitude,Double areaM2,Integer activityCount,Long population) {
+  public MapCoordinate(Double latitude,Double longitude){this(latitude,longitude,null,null,null);}
   public boolean valid(){ return latitude!=null&&longitude!=null&&latitude>=-90&&latitude<=90&&longitude>=-180&&longitude<=180; }
  }
  public record CityAnalysisRequest(

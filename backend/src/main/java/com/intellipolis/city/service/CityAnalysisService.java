@@ -111,11 +111,11 @@ public class CityAnalysisService {
         List<MapCoordinate> selected = new ArrayList<>();
         for (int i = 0; i < count; i++) {
             FacilityType f = needs.get(i);
-            MapCoordinate s = selectDistributed(available, selected);
+            MapCoordinate s = selectCandidate(f,available, selected);
             available.remove(s);
             selected.add(s);
             int ordinal=(int)facilities.stream().filter(x->x.facilityType()==f).count()+1;
-            facilities.add(new PlannedFacility(UUID.randomUUID().toString(), facilityName(f, ordinal), f, PlanStatus.PROPOSED, s.longitude(), s.latitude(), f == FacilityType.PARK ? 12d : 32d, unit, facilityReason(f, r) + " 이 위치는 상권이나 버스정류장이 가까워 실제 이용 가능성이 있고, 500㎡ 이상이면서 기존 도시계획시설과 겹치지 않는 필지입니다. 다만 최종 위치는 현장 조사 후 확정해야 합니다."));
+            facilities.add(new PlannedFacility(UUID.randomUUID().toString(), facilityName(f, ordinal), f, PlanStatus.PROPOSED, s.longitude(), s.latitude(), f == FacilityType.PARK ? 12d : 32d, unit, facilityReason(f, r) + candidateReason(f,s)));
         }
         List<PlannedRoad> roads = roadCandidates(r, type == PlanType.COST_EFFECTIVE ? 2 : 4).stream().map(o -> roadPlan(o, type)).toList();
         List<String> limits = new ArrayList<>();
@@ -148,22 +148,30 @@ public class CityAnalysisService {
 
     private void add(List<FacilityType> target,FacilityType type,int count){for(int i=0;i<count;i++)target.add(type);}
     private int quantity(double value,int max){return Math.min(max,Math.max(1,(int)Math.ceil(value-1e-9)));}
-    private MapCoordinate selectDistributed(List<MapCoordinate> candidates,List<MapCoordinate> selected){
-        if(selected.isEmpty()) return candidates.getFirst();
-        return candidates.stream().max(Comparator.comparingDouble(x->selected.stream().mapToDouble(y->distance(x,y)).min().orElse(0))).orElseThrow();
-    }
+    private MapCoordinate selectCandidate(FacilityType type,List<MapCoordinate> candidates,List<MapCoordinate> selected){return candidates.stream().max(Comparator.comparingDouble(x->suitability(type,x)+(selected.isEmpty()?0:Math.min(4,selected.stream().mapToDouble(y->distance(x,y)).min().orElse(0))))).orElseThrow();}
+    private double suitability(FacilityType type,MapCoordinate x){double area=Math.log1p(orZero(x.areaM2())),activity=Math.log1p(orZero(x.activityCount())),population=Math.log1p(orZero(x.population()));return switch(type){case PARK->area*2+population*2+activity*3;case TRANSIT_HUB->activity*4+population*3+area*.5;case HOSPITAL,PUBLIC_SERVICE->population*4+activity*2+area*.5;default->population+activity+area;};}
+    private double orZero(Number value){return value==null?0:value.doubleValue();}
+    private String candidateReason(FacilityType type,MapCoordinate x){if(x.areaM2()==null)return " 검증된 건설 가능 후보지를 구 전체에 분산한 위치이며 최종 입지는 현장 조사 후 확정해야 합니다.";String focus=switch(type){case PARK->"필지 면적과 생활권 인구";case TRANSIT_HUB->"생활 활동점과 인구";case HOSPITAL,PUBLIC_SERVICE->"생활권 인구와 활동 수요";default->"생활 수요";};return " "+focus+"를 우선 평가한 후보로, 필지 "+Math.round(x.areaM2())+"㎡·반경 약 1km 활동점 "+Math.round(orZero(x.activityCount()))+"개·해당 법정동 인구 "+Math.round(orZero(x.population()))+"명을 반영했습니다. 기존 도시계획시설과 겹치지 않지만 최종 입지는 현장 조사 후 확정해야 합니다.";}
     private double distance(MapCoordinate a,MapCoordinate b){double x=(a.longitude()-b.longitude())*88,y=(a.latitude()-b.latitude())*111;return Math.hypot(x,y);}
     private String facilityTypeName(FacilityType type){return switch(type){case TRANSIT_HUB->"환승거점";case PARK->"쉼터·공원";case HOSPITAL->"의료거점";case SCHOOL->"교육시설";case PUBLIC_SERVICE->"공공서비스";case CULTURE->"문화시설";};}
 
     private String facilityReason(FacilityType f, CityAnalysisRequest r) {
         return switch (f) {
-            case TRANSIT_HUB -> "인구·활동성 기반 생활권 후보에서 가장 가까운 버스정류장까지 평균 " + oneDecimal(r.averageTransitDistanceKm()) + "km로, 환승 또는 정류장 접근 개선 검토가 필요합니다.";
-            case PARK -> r.averageParkDistanceKm()>0?"주민이 공원까지 평균 " + oneDecimal(r.averageParkDistanceKm()) + "km를 이동해야 하고, 공원 면적 비율도 " + oneDecimal(r.parkAreaRatio()) + "%에 그쳐 가까운 쉼터가 필요합니다.":"공원 면적 비율이 " + oneDecimal(r.parkAreaRatio()) + "%로 낮아 생활권 안에서 걸어갈 수 있는 쉼터를 보완합니다.";
-            case HOSPITAL -> r.averageHospitalDistanceKm()>0?"병원은 " + r.hospitalCount() + "개이며 평균 의료 접근거리가 " + r.averageHospitalDistanceKm() + "km여서 가까운 의료 거점이 필요합니다.":"현재 집계된 병원이 " + r.hospitalCount() + "개여서 의료 접근 취약 가능성을 보완합니다.";
+            case TRANSIT_HUB -> "인구·활동성 기반 생활권 후보에서 가장 가까운 버스정류장까지 평균 직선거리가 " + oneDecimal(r.averageTransitDistanceKm()) + "km로, 환승 또는 정류장 접근 개선 검토가 필요합니다.";
+            case PARK -> parkReason(r);
+            case HOSPITAL -> r.averageHospitalDistanceKm()>0?"병원은 " + r.hospitalCount() + "개이며 생활권 후보에서 가장 가까운 병원까지 평균 직선거리가 " + r.averageHospitalDistanceKm() + "km여서 가까운 의료 거점이 필요합니다.":"현재 집계된 병원이 " + r.hospitalCount() + "개여서 의료 접근 취약 가능성을 보완합니다.";
             case SCHOOL -> "학교가 0개로 집계됐습니다. 데이터 누락 여부를 먼저 확인하고 실제 부족이 확인될 때만 검토합니다.";
             case PUBLIC_SERVICE -> "고령인구 비율 " + r.elderlyRatio() + "%에 따른 생활지원 수요를 근거로 검토";
             case CULTURE -> "문화시설 수요조사 후 검토";
         };
+    }
+
+    private String parkReason(CityAnalysisRequest r) {
+        boolean far = r.averageParkDistanceKm() > .8;
+        boolean scarce = r.parkAreaRatio() < 5;
+        if (far && scarce) return "생활권 후보에서 가장 가까운 공원까지 평균 직선거리가 " + oneDecimal(r.averageParkDistanceKm()) + "km이고, 공원 면적 비율도 " + oneDecimal(r.parkAreaRatio()) + "%로 낮아 가까운 쉼터가 필요합니다.";
+        if (far) return "공원 면적은 부족 기준에 해당하지 않지만, 생활권 후보에서 공원까지 평균 직선거리가 " + oneDecimal(r.averageParkDistanceKm()) + "km여서 쉼터 접근을 보완합니다.";
+        return "평균 접근거리는 부족 기준에 해당하지 않지만, 공원 면적 비율이 " + oneDecimal(r.parkAreaRatio()) + "%로 낮아 생활권 녹지를 보완합니다.";
     }
 
     private String oneDecimal(double value) { return String.format(java.util.Locale.KOREA, "%.1f", value); }
@@ -198,7 +206,8 @@ public class CityAnalysisService {
             studies.add("반복 관측으로 상습 혼잡 여부 확인");
         }
         RoadType roadType = improvement == RoadImprovementType.PUBLIC_TRANSIT ? RoadType.BUS : improvement == RoadImprovementType.PEDESTRIAN_SAFETY ? RoadType.PEDESTRIAN : RoadType.ROAD;
-        String evidence = "실측 속도 " + o.speedKmh() + "km/h" + (o.volume() == null || o.volume() <= 0 ? "" : ", 교통량 " + o.volume() + "대") + (o.queueLength() == null ? "" : ", 대기행렬 " + o.queueLength() + "m") + (o.pedestrianCount() == null ? "" : ", 보행 " + o.pedestrianCount() + "명");
+        String confidence = o.intersectionName()!=null && ((o.queueLength()!=null&&o.queueLength()>0)||(o.pedestrianCount()!=null&&o.pedestrianCount()>0)||(o.volume()!=null&&o.volume()>0)) ? "높음" : "보통";
+        String evidence = "근거 신뢰도 " + confidence + " · 실측 속도 " + o.speedKmh() + "km/h" + (o.volume() == null || o.volume() <= 0 ? "" : ", 교통량 " + o.volume() + "대") + (o.queueLength() == null || o.queueLength() <= 0 ? "" : ", 대기행렬 " + o.queueLength() + "m") + (o.pedestrianCount() == null || o.pedestrianCount() <= 0 ? "" : ", 보행 " + o.pedestrianCount() + "명");
         return new PlannedRoad(UUID.randomUUID().toString(), o.roadName() + " 개선 검토", roadType, PlanStatus.PROPOSED, o.coordinates(), improvementReason(improvement), improvement, feasibility, evidence, impact, studies);
     }
 
