@@ -9,10 +9,11 @@ import java.util.List;
 @Component
 public class CityScoreCalculator {
  public CityScores current(CityAnalysisRequest r){
-  int traffic=clamp(68-distancePenalty(r.averageTransitDistanceKm(),.5,12)+Math.min(15,r.transitHubCount()*2)-r.congestedRoads().size()*4);
+  int traffic=clamp(68-distancePenalty(r.averageTransitDistanceKm(),.5,12)+densityBonus(r.transitHubCount(),r.population(),2,15)-Math.min(30,r.congestedRoads().size()*3));
   int environment=clamp(45+(int)(r.parkAreaRatio()*3)-distancePenalty(r.averageParkDistanceKm(),.5,10));
-  int living=clamp(45+Math.min(18,r.hospitalCount()*2)+Math.min(18,r.schoolCount())-distancePenalty(r.averageHospitalDistanceKm(),1,8)-(r.elderlyRatio()>25?5:0));
-  int economy=clamp(75+(r.totalBudget()>0?5:0));
+  int living=clamp(45+densityBonus(r.hospitalCount(),r.population(),2,18)+densityBonus(r.schoolCount(),r.population(),1,18)-distancePenalty(r.averageHospitalDistanceKm(),1,8)-(r.elderlyRatio()>25?5:0));
+  // 경제활동·고용·재정자립도 자료가 없으므로 예산 존재 여부만으로 우수하다고 간주하지 않는다.
+  int economy=50;
   return scores(traffic,environment,economy,living);
  }
  public CityScores planned(CityAnalysisRequest r,List<PlannedFacility> facilities,long cost){
@@ -26,5 +27,6 @@ public class CityScoreCalculator {
  }
  private CityScores scores(int t,int e,int c,int l){ return new CityScores(t,e,c,l,Math.round((t+e+c+l)/4f)); }
  private int distancePenalty(double distance,double standard,int rate){return distance<=0?0:(int)(Math.max(0,distance-standard)*rate);}
+ private int densityBonus(int count,long population,int rate,int max){return population<=0?0:Math.min(max,(int)Math.round(count*100_000d/population*rate));}
  public int clamp(int n){ return Math.max(0,Math.min(100,n)); }
 }

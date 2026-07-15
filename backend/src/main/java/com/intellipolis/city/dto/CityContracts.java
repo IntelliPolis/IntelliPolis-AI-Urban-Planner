@@ -10,7 +10,8 @@ import java.util.UUID;
 public final class CityContracts {
  private CityContracts() {}
  public record MapCoordinate(@NotNull @DecimalMin("-90") @DecimalMax("90") Double latitude,
-  @NotNull @DecimalMin("-180") @DecimalMax("180") Double longitude) {
+  @NotNull @DecimalMin("-180") @DecimalMax("180") Double longitude,Double areaM2,Integer activityCount,Long population) {
+  public MapCoordinate(Double latitude,Double longitude){this(latitude,longitude,null,null,null);}
   public boolean valid(){ return latitude!=null&&longitude!=null&&latitude>=-90&&latitude<=90&&longitude>=-180&&longitude<=180; }
  }
  public record CityAnalysisRequest(
@@ -39,7 +40,7 @@ public final class CityContracts {
  public record PlannedFacility(String id,String name,FacilityType facilityType,PlanStatus status,Double longitude,Double latitude,Double height,Long estimatedCost,String reason) {}
  public record PlannedRoad(String id,String name,RoadType roadType,PlanStatus status,List<List<Double>> coordinates,String reason,
   RoadImprovementType improvementType,FeasibilityLevel feasibility,String evidence,String landImpact,List<String> requiredStudies) {
-  public PlannedRoad(String id,String name,RoadType roadType,PlanStatus status,List<List<Double>> coordinates,String reason){this(id,name,roadType,status,coordinates,reason,RoadImprovementType.DEMAND_MANAGEMENT,FeasibilityLevel.MEDIUM,"추가 교통조사 필요","기존 도로 운영 범위",List.of("현장 교통량 조사"));}
+  public PlannedRoad(String id,String name,RoadType roadType,PlanStatus status,List<List<Double>> coordinates,String reason){this(id,name,roadType,status,coordinates,reason,RoadImprovementType.OPERATION_DIAGNOSIS,FeasibilityLevel.LOW,"추가 교통조사 필요","기존 도로 운영 범위",List.of("현장 교통량 조사"));}
  }
  public record PlannedZone(String id,String name,ZoneType zoneType,PlanStatus status,List<List<Double>> coordinates,String reason) {}
  public record ImplementationPhase(int order,String name,String description) {}

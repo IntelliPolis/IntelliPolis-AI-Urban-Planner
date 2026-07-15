@@ -1,7 +1,5 @@
 package com.intellipolis.spatial;
 
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,10 +16,8 @@ public class SpatialDataController {
 
     @GetMapping("/candidates")
     SpatialDataService.SpatialCandidates candidates(@RequestParam @NotBlank String city,
-            @RequestParam @NotBlank String district,
-            @RequestParam @DecimalMin("-180") @DecimalMax("180") double longitude,
-            @RequestParam @DecimalMin("-90") @DecimalMax("90") double latitude) {
-        return service.candidates(city, district, longitude, latitude);
+            @RequestParam @NotBlank String district) {
+        return service.candidates(city, district);
     }
 
     @GetMapping("/boundary")
