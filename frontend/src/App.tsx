@@ -46,6 +46,8 @@ function SiteClosing(){return <><section className="closing"><div><span>DESIGNIN
 function Dashboard({data,center,plans,selected,onSelect}:{data:Summary;center:[number,number];plans:CityPlan[];selected:number;onSelect:(i:number)=>void}){
  const plan=plans[selected]||null;
  const roads=data.traffic?.congestedRoads.slice(0,8)||[];
+ const limits=data.warnings.filter(x=>/(실패|없어|없음|부족|제외|미수집|오류|못했|않았)/.test(x));
+ const evidence=data.warnings.filter(x=>!limits.includes(x));
  return <>
   <section className="metric-row refined-metrics">
    <Metric icon="▥" label="상가·상권" value={`${data.businessCount.toLocaleString()}개`} description="분석 지역 내 상업 시설 수"/>
@@ -60,7 +62,8 @@ function Dashboard({data,center,plans,selected,onSelect}:{data:Summary;center:[n
   {plan&&<PlanDetails plan={plan}/>}
   {plan&&<DetailedReport plan={plan} roads={roads}/>}
   <section className="agent-explanation"><small>MULTI-AGENT REVIEW</small><h2>분야별 검토 의견</h2><div><p><b>교통</b> ITS 실측 속도에서 20km/h 미만 링크를 혼잡 후보로 반영했습니다. 지도 연결축은 검토안이며 실제 신설은 필지·계획시설 검토가 필요합니다.</p><p><b>환경</b> 공원 수와 면적을 바탕으로 녹지 연결 가능성을 검토합니다.</p><p><b>경제</b> 기존 상권을 훼손하지 않고 생활 서비스 거점을 연계하는 방향입니다.</p><p><b>생활</b> 병원·학교·인구 API 값이 없는 항목은 생성하지 않고 미수집 상태로 둡니다.</p></div></section>
-  {data.warnings.length>0&&<section className="live-warnings"><b>데이터 한계</b>{data.warnings.map(x=><span key={x}>{x}</span>)}</section>}
+  {evidence.length>0&&<section className="live-warnings data-evidence"><b>분석 데이터 적용 근거</b>{evidence.map(x=><span key={x}>{x}</span>)}</section>}
+  {limits.length>0&&<section className="live-warnings"><b>데이터 한계</b>{limits.map(x=><span key={x}>{x}</span>)}</section>}
  </>
 }
 function TrafficOverview({roads}:{roads:TrafficSummary["congestedRoads"]}){
