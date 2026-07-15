@@ -59,6 +59,9 @@ PUBLIC_DATA_API_KEY=your_public_portal_key_here
 NEIS_API_KEY=your_neis_api_key_here
 ITS_API_KEY=your_its_api_key_here
 
+# 4. 도시 건축 정보 데이터 원자료 설정
+APP_URBAN_DATA_BUILDINGS_ZIP=C:\Users\사용자\Downloads\AL_D010_26_20260709.zip
+
 ```
 
 ### 📂 프론트엔드 설정 (`frontend/.env`)
@@ -149,7 +152,10 @@ npm run dev
   "priorityGoals": ["교통 혼잡 개선", "녹지 접근성 향상"],
   "mapCenter": {
     "latitude": 35.16,
-    "longitude": 129.16
+    "longitude": 129.16,
+    "areaM2": 150000.0,
+    "activityCount": 350,
+    "population": 320000
   },
   "boundary": []
 }
@@ -174,7 +180,7 @@ npm run dev
 
 | 외부 연동 기능 설명 | 공간 데이터 매핑 확인 (Spatial Mapping) |
 | :--- | :---: |
-| **Ext 1. 브이월드 API 연동 상태 체크**<br>• 공간 정보 타일맵 및 주소 검색 연동 상태를 사전에 최종 점검합니다. | ![확장 1](docs/images/확장1.png) |
+| **Ext 1. 브이월드 API 연동 상태 체크**<br>• 공간 정보 타일맵 및 "**브이월드 API 상태(/status)**"를 사전에 최종 점검합니다. | ![확장 1](docs/images/확장1.png) |
 | **Ext 2. 공공데이터포털 실시간 대기 정보 매핑**<br>• 해당 자치구 내 실시간 미세먼지 및 대기 상태 정보를 조회해 지도 위에 가시화합니다. | ![확장 2](docs/images/확장2.png) |
 | **Ext 3. 의료 인프라 분포 시각화**<br>• 관내 공공 병원 및 응급 의료 센터 위치 데이터를 실시간 매핑하여 인프라 격차를 파악합니다. | ![확장 3](docs/images/확장3.png) |
 | **Ext 4. 교육 인프라 분포 시각화**<br>• NEIS API를 조회하여 주거지 주변 초·중·고등학교 통학 분포 정보를 공간화합니다. | ![확장 4](docs/images/확장4.png) |
@@ -358,7 +364,7 @@ public record UrbanAiResult(
 ### 3.2 TypeScript 타입
 
 ```typescript
-export type PlanType = "BALANCED" | "ENVIRONMENTAL" | "BUDGET";
+export type PlanType = "BALANCED" | "ECO_FOCUSED" | "COST_EFFECTIVE";
 
 export interface UrbanScores {
   overall: number;
