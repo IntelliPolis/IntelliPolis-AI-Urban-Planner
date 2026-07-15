@@ -14,7 +14,9 @@ out/
 backend/.gradle-cache/
 backend/.gradle/
 backend/build/
-backend/data/raw/
+backend/data/raw/*
+!backend/data/raw/202606_부산_행정동별_주민등록인구.csv
+!backend/data/raw/202606_부산_법정동별_연령별인구.csv
 backend/data/cache/
 backend/bin/
 frontend/dist/

@@ -5,7 +5,7 @@ export type CostLevel=Severity;
 export type PlanStatus="EXISTING"|"PROPOSED";
 export type FacilityType="HOSPITAL"|"PARK"|"SCHOOL"|"TRANSIT_HUB"|"CULTURE"|"PUBLIC_SERVICE";
 export type RoadType="ROAD"|"BUS"|"BRT"|"SUBWAY"|"PEDESTRIAN"|"BICYCLE";
-export type RoadImprovementType="SIGNAL_OPTIMIZATION"|"LANE_OPERATION"|"PUBLIC_TRANSIT"|"PEDESTRIAN_SAFETY"|"DEMAND_MANAGEMENT"|"EXPANSION_REVIEW"|"NEW_ROAD_REVIEW";
+export type RoadImprovementType="OPERATION_DIAGNOSIS"|"SIGNAL_OPTIMIZATION"|"LANE_OPERATION"|"PUBLIC_TRANSIT"|"PEDESTRIAN_SAFETY"|"DEMAND_MANAGEMENT"|"EXPANSION_REVIEW"|"NEW_ROAD_REVIEW";
 export type FeasibilityLevel="HIGH"|"MEDIUM"|"LOW";
 export type ZoneType="MIXED_USE"|"RESIDENTIAL"|"COMMERCIAL"|"GREEN"|"REDEVELOPMENT";
 export interface MapCenter { latitude:number; longitude:number }
