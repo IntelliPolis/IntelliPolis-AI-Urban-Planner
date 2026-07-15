@@ -42,9 +42,9 @@
 
 ### 화면
 
-<img width="1904" height="922" alt="image" src="https://github.com/user-attachments/assets/8a7b7c9c-0cab-47d0-b5cf-fdbefbdd5bf3" />
-<img width="1904" height="922" alt="image" src="https://github.com/user-attachments/assets/b9b64bb0-ff44-4778-90d3-91f9c459f5f9" />
-<img width="1904" height="922" alt="image" src="https://github.com/user-attachments/assets/e0a6b5b9-4644-4224-a2b7-1730d980792f" />
+<img width="1905" height="924" alt="image" src="https://github.com/user-attachments/assets/f0523b9e-0eef-423a-95ed-3a75f6ced31f" />
+<img width="1906" height="922" alt="image" src="https://github.com/user-attachments/assets/16ce3a02-f7a0-4ac3-b288-0b6187a7ab6d" />
+<img width="1907" height="924" alt="image" src="https://github.com/user-attachments/assets/497d02f2-62e8-4f69-8c4a-dfb02ec42ae6" />
 
 
 ## 현재 맞고 있는 가장 큰 문제
