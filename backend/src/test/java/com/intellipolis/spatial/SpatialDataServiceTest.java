@@ -27,4 +27,18 @@ class SpatialDataServiceTest {
         assertThat(SpatialDataService.intersectsAny(index, geometries.createPoint(new Coordinate(1, 1)))).isTrue();
         assertThat(SpatialDataService.coveredByAny(index, geometries.createPoint(new Coordinate(3, 3)))).isFalse();
     }
+
+    @Test
+    void activityDensityExcludesIsolatedParcels() {
+        var geometries = new GeometryFactory();
+        var index = SpatialDataService.spatialIndex(java.util.List.of(
+                geometries.createPoint(new Coordinate(129.00, 35.15)),
+                geometries.createPoint(new Coordinate(129.001, 35.151)),
+                geometries.createPoint(new Coordinate(129.002, 35.152))));
+
+        assertThat(SpatialDataService.nearbyCount(index,
+                geometries.createPoint(new Coordinate(129.001, 35.151)), 0.009)).isEqualTo(3);
+        assertThat(SpatialDataService.nearbyCount(index,
+                geometries.createPoint(new Coordinate(129.05, 35.20)), 0.009)).isZero();
+    }
 }
