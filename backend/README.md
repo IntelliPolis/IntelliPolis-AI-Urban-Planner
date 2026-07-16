@@ -25,8 +25,11 @@ Copy-Item .env.example .env
 - `POST /api/city-analyses/{analysisId}/plans/{planType}/explain`
 - `GET /api/urban-data/regions`
 - `GET /api/urban-data/summary?city=부산광역시&district=해운대구`
+- `GET /api/spatial/boundary?city=부산광역시&district=해운대구`
+- `GET /api/spatial/candidates?city=부산광역시&district=해운대구`
+- `GET /api/traffic/summary?city=부산광역시&district=해운대구&longitude=129.16&latitude=35.16`
 - `GET /api/vworld/status`
-- `GET /api/vworld/search?query=해운대구`
+- `GET /api/vworld/tiles/{z}/{y}/{x}.png`
 
 샘플 요청은 `GET /api/cities/sample` 응답을 그대로 `POST /api/city-analyses`에 전송할 수 있습니다.
 
