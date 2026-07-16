@@ -70,7 +70,7 @@ APP_URBAN_DATA_BUILDINGS_ZIP=C:\Users\사용자\Downloads\AL_D010_26_20260709.zi
 
 ```env
 VITE_API_BASE_URL=http://localhost:8080
-VITE_MAP_STYLE_URL=[https://demotiles.maplibre.org/style.json](https://demotiles.maplibre.org/style.json)
+VITE_MAP_STYLE_URL=https://demotiles.maplibre.org/style.json
 VITE_USE_MOCK=false
 
 ```
