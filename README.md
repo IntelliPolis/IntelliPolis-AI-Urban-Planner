@@ -9,6 +9,9 @@ IntelliPolis는 도시계획 담당자와 지역 주민이 도시 데이터를 �
 IntelliPolis는 AI가 도시계획을 대신하는 서비스가 아니라, **데이터 기반 분석과 AI 제안을 결합해 사용자의 의사결정을 지원하는 서비스**입니다.
 
 ---
+### 시연 GIF
+<img width="800" height="450" alt="ezCam_20260720104415 (4)" src="https://github.com/user-attachments/assets/cf2e4e75-da81-489e-ac56-339dd00778b7" />
+
 
 ## 📌 우리 서비스는 누구의 어떤 문제를 해결하는가?
 
