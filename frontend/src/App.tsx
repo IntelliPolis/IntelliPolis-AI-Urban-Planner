@@ -989,7 +989,7 @@ function MapView({
   const facilities =
     plan?.facilities.filter((f) => f.longitude != null && f.latitude != null) ||
     [];
-  // @ts-expect-error MapLibre는 런타임 2D/3D 레이어 전환의 판별 유니온을 추론하지 못한다.
+  // ts-expect-error MapLibre는 런타임 2D/3D 레이어 전환의 판별 유니온을 추론하지 못한다.
   useEffect(() => {
     if (!host.current) return;
     const markers: maplibregl.Marker[] = [];

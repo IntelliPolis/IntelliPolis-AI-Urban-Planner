@@ -188,7 +188,8 @@ public class CityAnalysisService {
             case SPORTS_CENTER -> "주거 밀집도와 생활 활동점 대비 생활체육 인프라가 부족할 수 있어 반경 1km 생활권 체육 거점을 검토합니다.";
             case LIBRARY -> "학령·청년 인구와 문화·학습 수요를 고려해 공공 도서관 또는 학습문화 거점을 검토합니다.";
             case GREEN_SHELTER -> parkReason(r);
-            case HEALTH_CENTER -> "병원 접근성과 고령층 생활권을 고려해 예방·상담·기초 건강관리 기능을 가진 건강생활지원센터를 검토합니다.";
+            case HEALTH_CENTER -> "병원 접" +
+                    "근성과 고령층 생활권을 고려해 예방·상담·기초 건강관리 기능을 가진 건강생활지원센터를 검토합니다.";
             case PARKING -> "상업시설과 혼잡 도로가 함께 많은 지역으로, 불법 주정차와 진입 교통을 줄이기 위한 공영주차장 후보를 검토합니다.";
         };
     }
