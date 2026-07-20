@@ -1,411 +1,621 @@
-# 🏙️ IntelliPolis: AI 기반 도시계획 의사결정 지원 플랫폼
+# 🏙️ IntelliPolis
 
-> **Designing Smarter Cities with AI**  
-> IntelliPolis는 도시계획 담당자와 지역 주민을 위해 인구, 교통, 환경, 공공시설, 예산 데이터를 분석하고, Spring AI 기반 멀티 에이전트가 다양한 관점의 도시계획 대안을 제안하는 웹 서비스입니다.
+> **Designing Smarter Cities with AI**
 
-AI가 실제 행정 결정을 대신하는 것이 아니라, 다양한 계획안을 정량적 수치와 비교·검토할 수 있도록 객관적이고 직관적인 도구를 제공하는 것을 목표로 합니다.
+IntelliPolis는 도시계획 담당자와 지역 주민이 도시 데이터를 쉽게 확인하고, AI가 제안하는 다양한 도시계획 대안을 비교할 수 있도록 지원하는 **AI 기반 도시계획 의사결정 지원 플랫폼**입니다.
+
+인구, 교통, 건축물, 버스정류소 등 여러 공공데이터를 통합하여 도시의 현재 상태를 분석하고, Spring AI를 활용해 도시의 문제점과 개선 방향을 자연어로 제공합니다.
+
+IntelliPolis는 AI가 도시계획을 대신하는 서비스가 아니라, **데이터 기반 분석과 AI 제안을 결합해 사용자의 의사결정을 지원하는 서비스**입니다.
 
 ---
 
-## 📌 1. 프로젝트 핵심 아키텍처 및 역할 분담
+## 📌 우리 서비스는 누구의 어떤 문제를 해결하는가?
 
-IntelliPolis는 모든 의사결정을 생성형 AI에만 의존하지 않고, "**검증된 Java 규칙 계산기**"와 "**Spring AI(Gemini)**"의 상호보완적 결합으로 구동됩니다.
+### 주요 사용자
 
-* **정확한 수치 및 정량적 계산:** "**Java 백엔드**"가 담당 (도시 점수 계산, 예산/좌표 유효성 검증, 데이터 누락 차단)
-* **정성적 해석 및 아이디어 제안:** "**Spring AI (Gemini 3.1 Flash-Lite)**"가 담당 (도시 문제점 진단, 상충 관계 분석, 3대 시나리오 계획안 작성)
+* 도시계획 및 행정 담당자
+* 지역 정책을 검토하는 공공기관 관계자
+* 도시 문제와 지역 현황을 확인하려는 시민
+* 도시 데이터를 학습하고 분석하려는 학생 및 연구자
+
+### 해결하려는 문제
+
+도시계획을 수립하기 위해서는 다음과 같은 다양한 요소를 함께 고려해야 합니다.
+
+* 지역별 인구
+* 건축물 현황
+* 도로 교통량
+* 교통 혼잡도
+* 버스정류소 위치
+* 생활 인프라
+* 지역별 공간 특성
+
+하지만 이러한 데이터는 서로 다른 기관과 API에서 제공되기 때문에 사용자가 직접 수집하고 비교하기 어렵습니다.
+
+또한 수치 데이터를 확인하더라도, 해당 지역에 어떤 문제가 있고 어떤 정책이 필요한지 판단하기 위해서는 도시계획 관련 전문지식이 필요합니다.
+
+IntelliPolis는 여러 공공데이터를 하나의 서비스에서 통합하여 분석하고, Spring AI가 분석 결과를 사람이 이해하기 쉬운 설명과 도시계획 대안으로 변환합니다.
+
+이를 통해 사용자는 다음과 같은 도움을 받을 수 있습니다.
+
+* 흩어진 도시 데이터를 하나의 화면에서 확인
+* 지역별 인구와 교통 현황 비교
+* 도시 문제점과 개선 우선순위 확인
+* AI가 제안하는 도시계획 대안 비교
+* 데이터와 AI 분석을 함께 활용한 의사결정
+
+---
+
+## 👤 사용자는 서비스를 어떻게 이용하는가?
+
+### 1. 지역 선택
+
+사용자는 분석하려는 도시 또는 행정구역을 선택합니다.
+
+### 2. 도시 데이터 조회
+
+서비스는 공공데이터 API와 저장된 데이터 파일을 활용하여 다음 정보를 조회합니다.
+
+* 지역별 주민등록인구
+* 건축물대장 정보
+* 스마트교차로 접근로 교통량
+* 버스정류소 정보
+* 도로 링크별 소통정보
+
+### 3. 도시 현황 시각화
+
+조회된 데이터를 React 대시보드와 MapLibre 지도에 표시합니다.
+
+사용자는 지역의 인구, 교통량, 건축물, 버스정류소 등의 분포를 시각적으로 확인할 수 있습니다.
+
+### 4. 도시 점수 계산
+
+Spring Boot 백엔드에서 도시 데이터를 검증하고 정량적인 점수를 계산합니다.
+
+예를 들어 교통 혼잡도, 대중교통 접근성, 인구 집중도 등의 지표를 계산하여 도시의 현재 상태를 평가합니다.
+
+### 5. Spring AI 분석 요청
+
+정량 분석 결과를 Spring AI에 전달합니다.
+
+Spring AI는 데이터를 기반으로 다음 내용을 생성합니다.
+
+* 현재 도시의 주요 문제점
+* 문제의 원인
+* 개선 우선순위
+* 도시계획 대안
+* 대안별 기대효과와 고려사항
+
+### 6. 분석 결과 확인
+
+사용자는 대시보드에서 정량 점수와 AI 분석 결과를 함께 확인하고, 여러 도시계획 대안을 비교합니다.
+
+---
+
+## 🤖 Spring AI가 반드시 필요한 기능은 무엇인가?
+
+일반적인 Java 로직은 숫자를 계산하고 정해진 규칙에 따라 데이터를 분류하는 데 적합합니다.
+
+예를 들어 다음과 같은 기능은 Java에서 처리할 수 있습니다.
+
+* 인구 밀도 계산
+* 교통량 점수 계산
+* 버스정류소 개수 집계
+* 기준값에 따른 등급 분류
+* 요청 데이터 검증
+* 데이터 저장 및 조회
+
+하지만 다음과 같은 질문에는 단순한 규칙 기반 로직만으로 답하기 어렵습니다.
+
+> 현재 도시에서 가장 우선적으로 해결해야 할 문제는 무엇인가?
+
+> 인구와 교통 데이터를 함께 고려했을 때 어떤 정책이 적절한가?
+
+> 여러 도시계획 대안의 장점과 단점은 무엇인가?
+
+Spring AI는 정량 데이터를 해석하여 다음 기능을 수행합니다.
+
+* 도시 문제의 원인 분석
+* 개선 우선순위 판단
+* 도시계획 시나리오 생성
+* 대안별 장점과 위험요소 설명
+* 분석 결과를 자연어 보고서 형태로 변환
+* 사용자가 이해하기 쉬운 설명 생성
+
+따라서 IntelliPolis에서는 역할을 다음과 같이 구분합니다.
+
+> **Java는 데이터를 계산하고 검증하며, Spring AI는 계산 결과를 해석하고 도시계획 대안을 생성합니다.**
+
+---
+
+## ⚙️ React, Spring Boot, Spring AI, DB는 어떻게 연결되는가?
 
 ```text
-  [사용자 입력] ──> [Java 백엔드: 정량 검증 및 도시 점수 산출]
-                          │
-                          └──> [Spring AI: 분석 설명 및 3대 계획안 수립]
-                                    │
-                                    └──> [React + MapLibre: 대시보드 및 지도 시각화]
-
+사용자
+  ↓
+React
+  ├─ 지역 선택
+  ├─ 데이터 입력
+  ├─ 대시보드 출력
+  └─ MapLibre 지도 시각화
+  ↓
+Spring Boot REST API
+  ├─ 요청 데이터 검증
+  ├─ 공공데이터 API 호출
+  ├─ DB 조회 및 저장
+  ├─ 정량 점수 계산
+  └─ Spring AI 호출
+  ↓
+Spring AI
+  ├─ 도시 문제 분석
+  ├─ 개선 우선순위 생성
+  ├─ 도시계획 대안 생성
+  └─ 자연어 설명 생성
+  ↓
+MySQL
+  ├─ 도시 기본정보
+  ├─ 분석용 데이터
+  ├─ 점수 계산 결과
+  └─ AI 분석 결과
+  ↓
+React 결과 화면
 ```
 
-## 👥 2. 팀원 및 역할 분담
+### React
 
-| 이름 | 담당 역할 | 주요 업무 |
-| --- | --- | --- |
-| **정혁** | 팀장 · GitHub 관리 · 백엔드 개발 | GitHub Organization/Repository 관리, 브랜치 및 PR 병합 제어, Spring Boot 핵심 도메인 API 개발, 데이터 검증 및 도시 점수 계산 로직 구현 |
-| **유서하** | 프론트엔드 개발 · Spring AI 관리 | React 주요 대시보드 화면 및 기능 개발, MapLibre GL JS 지도 시각화 연동, Spring AI 프롬프트 엔지니어링 및 구조화 출력 관리 |
-| **이민재** | 프론트엔드 UI·UX · 디자인 | CSS 스타일링 및 반응형 레이아웃 설계, 지도 및 대시보드 컴포넌트 시각적 고도화, 발표용 데모 시나리오 최적화 및 화면 개선 |
+사용자가 직접 이용하는 화면을 담당합니다.
+
+* 지역 선택
+* 분석 조건 입력
+* 도시 데이터 조회
+* 대시보드 출력
+* 지도 시각화
+* AI 분석 결과 표시
+
+### Spring Boot
+
+서비스의 핵심 비즈니스 로직과 REST API를 담당합니다.
+
+* React 요청 수신
+* 입력 데이터 검증
+* 외부 공공데이터 API 호출
+* 데이터 가공 및 정량 점수 계산
+* MySQL 데이터 저장 및 조회
+* Spring AI 호출
+* 결과를 React에 전달
+
+### Spring AI
+
+도시 데이터를 정성적으로 분석하는 역할을 담당합니다.
+
+* Gemini 모델 연동
+* 프롬프트 관리
+* 도시 문제점 분석
+* 도시계획 대안 생성
+* 구조화된 AI 응답 생성
+* 자연어 보고서 생성
+
+### MySQL
+
+서비스에서 사용하는 데이터를 저장합니다.
+
+* 지역 기본정보
+* 공공데이터 API 조회 결과
+* 사용자 분석 조건
+* 도시 평가 점수
+* AI 분석 결과
 
 ---
 
-## ⚙️ 3. 환경 변수 설정 (Environment Setup)
+## 🚀 발표에서 보여줄 핵심 기능
 
-프로젝트를 실행하기 전, 로컬 환경에서 백엔드와 프론트엔드의 환경 변수(`.env`)를 반드시 먼저 설정해야 합니다.
+### 1. 분석 지역 선택
 
-### 📂 백엔드 설정 (`backend/.env`)
+사용자가 부산광역시 또는 세부 행정구역을 선택하는 기능을 보여줍니다.
 
-`backend` 디렉토리 하위에 `.env` 파일을 생성하고 아래 9가지 변수를 정확히 기입합니다.
+### 2. 공공데이터 조회
 
-*(주의: `SPRING_AI_MODEL_CHAT`이 `google-genai`로 활성화되어 있지 않으면 AI 모델이 호출되지 않고 항상 Fallback 템플릿만 동작하게 됩니다.)*
+선택한 지역을 기준으로 인구, 건축물, 교통량, 버스정류소, 도로 소통정보를 조회합니다.
 
-```env
-# 1. Gemini AI 설정
-GEMINI_API_KEY=your_actual_gemini_api_key_here
-GEMINI_MODEL=gemini-3.1-flash-lite
-SPRING_AI_MODEL_CHAT=google-genai
+### 3. 지도 시각화
 
-# 2. 서버 및 웹 오리진 설정
-FRONTEND_ORIGIN=http://localhost:5173
+MapLibre 지도 위에 다음 데이터를 표시합니다.
 
-# 3. 외부 공간정보 및 공공 API 키 설정
-VWORLD_API_KEY=your_vworld_api_key_here
-VWORLD_DOMAIN=http://localhost:5173
-PUBLIC_DATA_API_KEY=your_public_portal_key_here
-NEIS_API_KEY=your_neis_api_key_here
-ITS_API_KEY=your_its_api_key_here
+* 버스정류소 위치
+* 교통량
+* 도로 혼잡도
+* 건축물 및 지역 정보
 
-# 4. 도시 건축 정보 데이터 원자료 설정
-APP_URBAN_DATA_BUILDINGS_ZIP=C:\Users\사용자\Downloads\AL_D010_26_20260709.zip
+### 4. 정량 점수 계산
 
+Spring Boot가 조회한 데이터를 기반으로 도시 상태를 계산합니다.
+
+* 교통 점수
+* 대중교통 접근성
+* 인구 집중도
+* 생활 인프라 관련 점수
+* 종합 도시 점수
+
+### 5. AI 도시 분석
+
+Spring AI가 계산된 데이터를 기반으로 다음 내용을 생성합니다.
+
+* 지역의 주요 문제점
+* 개선이 필요한 이유
+* 우선적으로 추진할 정책
+* 도시계획 대안
+* 대안별 기대효과
+
+### 6. 데이터 분석 결과와 AI 제안 비교
+
+Java가 계산한 정량 점수와 Spring AI의 정성 분석을 한 화면에 함께 표시합니다.
+
+### 7. AI 장애 대응
+
+Gemini API 호출이 실패하거나 API Key가 설정되지 않은 경우에도 서비스가 완전히 중단되지 않도록 규칙 기반 기본 결과를 제공합니다.
+
+---
+
+## 🧩 구현 과정에서 가장 어려웠던 문제와 해결 방법
+
+> 이 부분은 실제 개발 과정에 맞게 수정하여 사용합니다.
+
+### 문제
+
+여러 공공데이터 API가 서로 다른 요청 방식과 응답 구조를 사용하기 때문에 하나의 서비스에서 일관된 형태로 데이터를 처리하기 어려웠습니다.
+
+또한 AI가 항상 동일한 JSON 구조로 응답하지 않아 프론트엔드에서 분석 결과를 안정적으로 출력하는 데 문제가 있었습니다.
+
+### 해결 방법
+
+각 공공데이터 API 응답을 DTO와 서비스 계층에서 공통 형식으로 변환했습니다.
+
+Spring AI에는 출력 형식과 필수 항목을 프롬프트에 명확하게 지정하고, 구조화된 응답을 사용하도록 설계했습니다.
+
+AI 응답 파싱이 실패할 경우에는 예외 처리와 Fallback 데이터를 적용하여 서비스가 중단되지 않도록 구성했습니다.
+
+---
+
+## 📂 데이터 및 API 준비
+
+### 데이터 파일 다운로드
+
+프로젝트에서 사용하는 공간 데이터와 원본 데이터는 용량이 크기 때문에 GitHub 저장소에 포함하지 않았습니다.
+
+아래 Google Drive에서 데이터 파일을 다운로드한 후 프로젝트의 데이터 폴더에 저장해 주세요.
+
+**데이터 다운로드**
+
+https://drive.google.com/file/d/1-5gbmrk7OBB_S4VVeFXpb7RNzq9Xo06Y/view?usp=sharing
+
+권장 저장 위치는 다음과 같습니다.
+
+```text
+backend/
+└── data/
+    └── raw/
+        └── 다운로드한 데이터 파일
 ```
 
-### 📂 프론트엔드 설정 (`frontend/.env`)
+---
 
-`frontend` 디렉토리 하위에 `.env` 파일을 생성하고 백엔드 엔드포인트를 매핑합니다.
+## 🔑 공공데이터 API 신청
+
+본 프로젝트에서 사용하는 공공데이터 API는 **공공데이터포털**에서 신청할 수 있습니다.
+
+### 승인받은 공공데이터 API
+
+| 제공기관  | API 이름            | 사용 목적                  |
+| ----- | ----------------- | ---------------------- |
+| 국토교통부 | 건축HUB 건축물대장정보 서비스 | 건축물 용도, 면적 및 건축물 현황 조회 |
+| 부산광역시 | 스마트교차로 접근로 교통량 정보 | 교차로 접근로별 교통량 분석        |
+| 행정안전부 | 통계연보 지역별 주민등록인구   | 지역별 인구 현황 및 인구 집중도 분석  |
+| 국토교통부 | (TAGO) 버스정류소정보    | 버스정류소 위치와 대중교통 접근성 분석  |
+| 부산광역시 | 링크소통정보            | 도로 링크별 속도와 교통 소통상태 분석  |
+
+공공데이터 API 신청 사이트:
+
+https://www.data.go.kr/
+
+공공데이터포털에 로그인한 뒤 각 API 이름을 검색하여 활용 신청을 진행해야 합니다.
+
+승인 완료 후 마이페이지에서 일반 인증키 또는 디코딩 인증키를 확인할 수 있습니다.
+
+---
+
+## 🤖 Google Gemini API 발급
+
+Spring AI를 이용한 도시 문제 분석과 도시계획 대안 생성을 위해 Gemini API Key가 필요합니다.
+
+발급 사이트:
+
+https://ai.google.dev/
+
+발급받은 Gemini API Key는 백엔드 환경 변수에 등록합니다.
+
+---
+
+## 🗺️ VWorld Open API 발급
+
+지도 및 공간정보 조회 기능에서 VWorld Open API를 사용할 수 있습니다.
+
+발급 사이트:
+
+https://www.vworld.kr/
+
+VWorld API를 신청할 때는 개발 환경에서 사용하는 도메인 또는 로컬 주소를 등록해야 할 수 있습니다.
+
+---
+
+## 🔐 환경 변수 설정
+
+API Key는 GitHub 저장소에 직접 올리지 않고 환경 변수 또는 `.env` 파일로 관리합니다.
+
+### Backend
+
+`backend/.env`
+
+```env
+# Google Gemini API
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+
+# VWorld Open API
+VWORLD_API_KEY=YOUR_VWORLD_API_KEY
+
+# 공공데이터포털 인증키
+PUBLIC_DATA_API_KEY=YOUR_PUBLIC_DATA_API_KEY
+
+# 프론트엔드 접근 허용 주소
+FRONTEND_ORIGIN=http://localhost:5173
+```
+
+공공데이터 API별로 서로 다른 키를 사용하는 구조라면 다음처럼 분리할 수 있습니다.
+
+```env
+BUILDING_HUB_API_KEY=YOUR_API_KEY
+TRAFFIC_VOLUME_API_KEY=YOUR_API_KEY
+POPULATION_API_KEY=YOUR_API_KEY
+BUS_STOP_API_KEY=YOUR_API_KEY
+ROAD_TRAFFIC_API_KEY=YOUR_API_KEY
+```
+
+공공데이터포털에서 동일한 인증키를 사용하는 경우 `PUBLIC_DATA_API_KEY` 하나만 설정해도 됩니다.
+
+### Frontend
+
+`frontend/.env`
 
 ```env
 VITE_API_BASE_URL=http://localhost:8080
 VITE_MAP_STYLE_URL=https://demotiles.maplibre.org/style.json
-VITE_USE_MOCK=false
+```
 
+> `.env` 파일은 개인정보와 API Key를 포함할 수 있으므로 GitHub에 업로드하지 않습니다.
+
+`.gitignore`에 다음 내용을 추가합니다.
+
+```gitignore
+.env
+*.env
+backend/.env
+frontend/.env
 ```
 
 ---
 
-## 🚀 4. 로컬 구동 및 실행 (How to Run)
+## 🚀 실행 방법
 
-### ☕ 백엔드 (Spring Boot)
+### 사전 준비
 
-1. Java 21 및 Gradle 환경을 확인합니다.
-2. `backend` 디렉토리로 이동하여 서버를 기동합니다.
+* Java 21
+* Node.js
+* npm
+* MySQL
+* Git
+* 발급받은 API Key
+* Google Drive에서 다운로드한 데이터 파일
+
+### 저장소 복제
+
+```bash
+git clone <repository-url>
+cd IntelliPolis
+```
+
+### Backend 실행
 
 ```bash
 cd backend
-
-# Windows (PowerShell)
-.\gradlew.bat bootRun
-
-# macOS / Linux
-./gradlew bootRun
-
 ```
 
-* **서버 동작 확인:** 브라우저에서 `http://localhost:8080/api/health` 접속 시 `UP` 또는 `200 OK` 확인.
+Windows:
 
-### ⚛️ 프론트엔드 (React)
+```bash
+gradlew.bat bootRun
+```
 
-1. Node.js (v18 이상 권장) 환경을 확인합니다.
-2. `frontend` 디렉토리로 이동하여 의존성 패키지를 설치하고 개발 서버를 엽니다.
+macOS 또는 Linux:
+
+```bash
+./gradlew bootRun
+```
+
+백엔드 기본 실행 주소:
+
+```text
+http://localhost:8080
+```
+
+### Frontend 실행
 
 ```bash
 cd frontend
 npm install
 npm run dev
-
 ```
 
-* **사용자 웹 접속:** 브라우저에서 `http://localhost:5173` 접속.
+프론트엔드 기본 실행 주소:
 
----
-
-## 🧪 5. Bruno를 이용한 API 재현 및 시연 시나리오
-
-본 프로젝트의 API 사양과 AI 장애 대응 복원력은 Bruno 컬렉션 파일을 임포트하여 즉시 원클릭으로 검증 및 시연이 가능합니다.
-
-### 🔄 [시나리오 1] 핵심 분석 및 대안 수립 정상 프로세스 (Happy Path)
-
-| 단계별 분석 흐름 및 설명 | 동작 스크린샷 (Screenshot) |
-| :--- | :---: |
-| **Step 1. 서비스 헬스 체크 및 샘플 조회**<br>• 백엔드 기동 상태를 점검하고 데모 시연을 위한 기본 도시 데이터를 로드합니다. | ![정상 1](docs/images/정상1.png) |
-| **Step 2. 도시 분석 지표 입력 및 전송**<br>• 인구, 예산, 도로 등 15가지 정량 행정 데이터를 Form 인터페이스를 통해 입력합니다. | ![정상 2](docs/images/정상2.png) |
-| **Step 3. 자치구 영역 지정 및 공간 분석**<br>• 지도 위에 대상 자치구 경계를 파싱하고, 분석을 위한 공간적 바운더리를 확정합니다. | ![정상 3](docs/images/정상3.png) |
-| **Step 4. Java 백엔드 정량 점수 산출**<br>• 백엔드가 분석 모델을 돌려 종합, 교통, 환경, 생활 점수를 규칙 기반으로 무결하게 계산합니다. | ![정상 4](docs/images/정상4.png) |
-| **Step 5. Gemini AI 종합 진단 설명서 출력**<br>• 계산된 점수와 우선순위 목표를 바탕으로 실시간 텍스트 브리핑 요약본을 출력합니다. | ![정상 5](docs/images/정상5.png) |
-| **Step 6. 도시 주요 문제점(Insight) 분류**<br>• 시급성이 높은 도시 이슈(교통 체증, 인프라 불균형 등)를 위험 등급별로 세분화하여 리스트업합니다. | ![정상 6](docs/images/정상6.png) |
-
----
-
-#### 📝 도시 분석 생성 요청 Payload 예시 (`POST /api/city-analyses`)
-
-```json
-{
-  "cityName": "부산광역시",
-  "districtName": "해운대구",
-  "population": 320000,
-  "areaKm2": 48.5,
-  "elderlyRatio": 22.4,
-  "youthRatio": 14.2,
-  "parkAreaRatio": 8.1,
-  "hospitalCount": 12,
-  "schoolCount": 34,
-  "transitHubCount": 8,
-  "averageHospitalDistanceKm": 2.3,
-  "averageParkDistanceKm": 1.8,
-  "averageTransitDistanceKm": 1.1,
-  "congestedRoads": ["해운대해변로", "센텀남대로"],
-  "totalBudget": 80000000000,
-  "priorityGoals": ["교통 혼잡 개선", "녹지 접근성 향상"],
-  "mapCenter": {
-    "latitude": 35.16,
-    "longitude": 129.16,
-    "areaM2": 150000.0,
-    "activityCount": 350,
-    "population": 320000
-  },
-  "boundary": []
-}
-
+```text
+http://localhost:5173
 ```
 
 ---
 
-### 🛡️ [시나리오 2] 예외 상황 및 Gemini AI 3-Way Fault Tolerance 검증
+## 🛠️ 기술 스택
 
-| 예외 상황 및 자가 복구 대응 설명 | 동작 스크린샷 (Screenshot) |
-| :--- | :---: |
-| **A. 잘못된 요청값 필터링 (400 Bad Request)**<br>• 필수 파라미터가 누락되거나 유효하지 않은 값(음수 등)이 인입되었을 때 내부 서버 에러(500)를 발생시키지 않고 사전에 올바른 에러 사유를 포착하여 대응합니다. | ![오류 1](docs/images/오류1.png) |
-| **B. 데이터 미존재 대응 (404 Not Found)**<br>• 존재하지 않는 UUID 분석 데이터의 단건 조회를 시도했을 때, 글로벌 예외 처리를 통해 클라이언트에게 안전한 오류 응답을 전달합니다. | ![오류 2](docs/images/오류2.png) |
-| **C-1. [3-Way] 정상 모드 (Normal Mode)**<br>• `.env`에 정상적인 Gemini API Key가 로드된 상태로, 실시간 생성된 고품질 AI 문맥과 정성적 제안 사항을 수신합니다. (200 OK) | ![3케이스 1](docs/images/3케이스1.png) |
-| **C-2. [3-Way] 무키 우회 모드 (No Key Fallback)**<br>• `.env`에 API 키를 완전히 비워두었을 때, 시스템이 마비되거나 통신 에러를 뿜지 않고 즉시 안전하게 내부 규칙 기반(Rule-based) 템플릿 답변으로 교차 전환합니다. (200 OK) | ![3케이스 2](docs/images/3케이스2.png) |
-| **C-3. [3-Way] 가짜 키 디펜스 모드 (Garbage Key Defense)**<br>• 만약 가짜 키가 설정되어 외부 API 인증 오류(401)가 발생하는 극한 상황에서도, `try-catch` 블록이 전역 포착하여 자동으로 빌트인 템플릿(Fallback)으로 우회 호출을 제공합니다. (200 OK) | ![3케이스 3](docs/images/3케이스3.png) |
+### Frontend
 
----
+* React
+* Vite
+* JavaScript
+* HTML5
+* CSS3
+* MapLibre GL JS
 
-### 🗺️ [시나리오 3] 외부 API 및 실시간 공간 정보 확장 (Extensions)
+### Backend
 
-| 외부 연동 기능 설명 | 공간 데이터 매핑 확인 (Spatial Mapping) |
-| :--- | :---: |
-| **Ext 1. 브이월드 API 연동 상태 체크**<br>• 공간 정보 타일맵 및 "**브이월드 API 상태(/status)**"를 사전에 최종 점검합니다. | ![확장 1](docs/images/확장1.png) |
-| **Ext 2. 공공데이터포털 실시간 대기 정보 매핑**<br>• 해당 자치구 내 실시간 미세먼지 및 대기 상태 정보를 조회해 지도 위에 가시화합니다. | ![확장 2](docs/images/확장2.png) |
-| **Ext 3. 의료 인프라 분포 시각화**<br>• 관내 공공 병원 및 응급 의료 센터 위치 데이터를 실시간 매핑하여 인프라 격차를 파악합니다. | ![확장 3](docs/images/확장3.png) |
-| **Ext 4. 교육 인프라 분포 시각화**<br>• NEIS API를 조회하여 주거지 주변 초·중·고등학교 통학 분포 정보를 공간화합니다. | ![확장 4](docs/images/확장4.png) |
-| **Ext 5. 주요 정체 도로 교통량 트래킹**<br>• ITS 실시간 교통 정보를 받아 상습 정체 구간의 실시간 혼잡 상태를 추적합니다. | ![확장 5](docs/images/확장5.png) |
-| **Ext 6. 대중교통 거점 환승 분석**<br>• 주요 버스/지하철 환승 센터 인근의 보행 접근성을 반경 단위로 분석해 렌더링합니다. | ![확장 6](docs/images/확장6.png) |
-| **Ext 7. 신규 시설 후보지 자동 스크리닝**<br>• 인프라 부족 점수가 가장 낮게 나온 공간적 격차 지역을 추려냅니다. | ![확장 7](docs/images/확장7.png) |
-| **Ext 8. 대안 실행에 따른 예상 정량 평가**<br>• 선택한 대안 적용 시 개선될 수치적 정량 지표들을 예측 차트로 그립니다. | ![확장 8](docs/images/확장8.png) |
-| **Ext 9. 동적 시연 보고서 내보내기**<br>• 분석된 종합 점수, AI 의견, 3대 계획안을 종합한 시연 결과 보고서를 아카이빙합니다. | ![확장 9](docs/images/확장9.png) |
+* Java 21
+* Spring Boot
+* Spring Web
+* Spring AI
+* Gradle
 
----
+### AI
 
-> **주의사항**
-> IntelliPolis에서 제공하는 도시계획 대안과 점수는 프로젝트용 규칙과 AI 분석을 기반으로 생성된 참고 결과입니다. 실제 도시계획, 행정 결정 또는 전문적인 도시공학 분석을 대신하지 않습니다.
+* Google Gemini 3.1 Flash-Lite
+* Spring AI Prompt Engineering
+* 구조화된 AI 응답
 
-**Team IntelliPolis**
+### Database
 
-*Designing Smarter Cities with AI*
+* MySQL
 
----
+### External API
 
-## 📄 2. `docs/design.md` (설계·계약 문서 전체 내용)
+* 국토교통부 건축HUB 건축물대장정보 서비스
+* 부산광역시 스마트교차로 접근로 교통량 정보
+* 행정안전부 통계연보 지역별 주민등록인구
+* 국토교통부 (TAGO) 버스정류소정보
+* 부산광역시 링크소통정보
+* VWorld Open API
+* Google Gemini API
 
-# 설계·계약 문서 (Day 4 최종 동기화 버전) — 팀 IntelliPolis
+### Collaboration
 
-> 저장 위치: `docs/design.md`  
-> 본 문서는 실제 구동 코드(`CityController.java`, `UrbanAiService.java`)를 분석하여 변경된 사항을 100% 반영한 확정 명세서입니다.
-
----
-
-## 1. 아키텍처 및 세부 설계 원칙
-
-1. **도메인 데이터 무결성 보장:** 점수, 수치, 퍼센트와 같은 정량 데이터 계산은 항상 Java 백엔드가 우선 제어하며 계산 결과의 보정을 AI에 위임하지 않습니다.
-2. **시스템 복원력 (Fault Tolerance) 극대화:** 구글 Gemini API 호출 중 에러가 발생하거나 키가 설정되지 않은 경우, 프로세스가 정지되지 않고 내부에서 정의된 룰베이스 템플릿을 `warnings` 또는 `explanation` 필드를 통해 우회 반환하도록 합니다.
+* Git
+* GitHub
+* GitHub Organization
+* GitHub Issues
+* Pull Request
 
 ---
 
-## 2. API 상세 명세 및 명칭 계약
+## 👥 팀원 및 역할 분담
 
-실제 코드에 부합하도록 정립된 백엔드 컨트롤러 엔드포인트 세트입니다.
-
-### 2.1 API 엔드포인트 목록
-
-| Method | Endpoint | 설명 | 구현 수준 |
-| :--- | :--- | :--- | :--- |
-| **GET** | `/api/health` | 백엔드 어플리케이션 상태 점검 | 필수 (Must) |
-| **GET** | `/api/cities/sample` | 시연 및 조회를 위한 하드코딩 샘플 도시 데이터 반환 | 필수 (Must) |
-| **POST** | `/api/city-analyses` | 신규 도시 지표 검증, 점수 계산, AI 분석 및 통합 저장 | 필수 (Must) |
-| **GET** | `/api/city-analyses/{id}` | 저장된 특정 분석 단건 조회 (UUID 사용) | 필수 (Must) |
-| **POST** | `/api/city-analyses/{id}/plans/{type}/evaluate` | 수정 및 선택된 계획안 유형별 재평가 | 필수 (Must) |
-| **POST** | `/api/city-analyses/{id}/plans/{type}/explain` | 선택된 계획안에 대한 AI 요약 설명 반환 | 필수 (Must) |
-| **GET** | `/api/external-data/status` | 외부 공공 API 키 로딩 상태 체크 | Should |
-| **GET** | `/api/vworld/status` | 브이월드 연동 및 키 인증 검증 | Should |
-| **GET** | `/api/traffic/status` | 실시간 도로 및 교통 지형 데이터 체크 | Should |
+| 이름      | 담당 역할                   | 주요 업무                                                                                                 |
+| ------- | ----------------------- | ----------------------------------------------------------------------------------------------------- |
+| **정혁**  | 팀장 · GitHub 관리 · 백엔드 개발 | GitHub Organization/Repository 관리, 브랜치 및 PR 병합 제어, Spring Boot 핵심 도메인 API 개발, 데이터 검증 및 도시 점수 계산 로직 구현 |
+| **유서하** | 프론트엔드 개발 · Spring AI 관리 | React 주요 대시보드 화면 및 기능 개발, MapLibre GL JS 지도 시각화 연동, Spring AI 프롬프트 엔지니어링 및 구조화 출력 관리                  |
+| **이민재** | 프론트엔드 UI·UX · 디자인       | CSS 스타일링 및 반응형 레이아웃 설계, 지도 및 대시보드 컴포넌트 시각적 고도화, 발표용 데모 시나리오 최적화 및 화면 개선                               |
 
 ---
 
-### 2.2 상세 — `POST /api/city-analyses` (도시 분석 요청)
+## ⚠️ 현재 서비스의 한계
 
-#### 요청 (Request Body)
-```json
-{
-  "cityName": "부산광역시",
-  "districtName": "해운대구",
-  "population": 320000,
-  "areaKm2": 48.5,
-  "elderlyRatio": 22.4,
-  "youthRatio": 14.2,
-  "parkAreaRatio": 8.1,
-  "hospitalCount": 12,
-  "schoolCount": 34,
-  "transitHubCount": 8,
-  "averageHospitalDistanceKm": 2.3,
-  "averageParkDistanceKm": 1.8,
-  "averageTransitDistanceKm": 1.1,
-  "congestedRoads": ["해운대해변로", "센텀남대로"],
-  "totalBudget": 80000000000,
-  "priorityGoals": ["교통 혼잡 개선", "녹지 접근성 향상"],
-  "mapCenter": {
-    "latitude": 35.16,
-    "longitude": 129.16
-  },
-  "boundary": []
-}
+### 1. 데이터 제공 범위 제한
 
-```
+일부 API는 부산광역시 또는 특정 지역의 데이터만 제공합니다.
 
-#### 응답 — 성공 (200 OK)
+따라서 현재 서비스의 분석 결과를 전국 모든 지역에 동일하게 적용하기 어렵습니다.
 
-```json
-{
-  "id": "59aa908e-c232-494b-afc8-3962a851dcf1",
-  "cityName": "부산광역시",
-  "districtName": "해운대구",
-  "scores": {
-    "overall": 75,
-    "transport": 68,
-    "environment": 72,
-    "economy": 80,
-    "living": 78
-  },
-  "summary": "교통 거점 접근성은 준수하나 혼잡 도로 정체 해결 및 녹지 벨트 구축이 병행되어야 하는 지역입니다.",
-  "insights": [
-    {
-      "category": "TRANSPORT",
-      "severity": "HIGH",
-      "message": "주요 도로의 차량 병목 현상이 거점 이동 지표를 저하시키고 있습니다."
-    }
-  ],
-  "plans": [
-    {
-      "type": "BALANCED",
-      "title": "균형개발 대안",
-      "description": "균형 잡힌 자원 배치와 접근성 개선",
-      "actions": ["주요 교차로 우회 신호 체계 구축", "어린이 보호구역 생활 공원 확장"],
-      "expectedEffects": ["정체율 15% 감소", "도심 열섬 현상 완화"],
-      "priority": 1
-    }
-  ],
-  "createdAt": "2026-07-15T11:04:04"
-}
+### 2. 공공데이터의 갱신 주기
 
-```
+공공데이터마다 갱신 시점과 제공 주기가 다르기 때문에 모든 데이터가 완전히 동일한 시점을 기준으로 분석되지는 않습니다.
 
-### 2.3 예외 및 시스템 응답 형태
+### 3. AI 결과의 불확실성
 
-오류나 예외 발생 시 프론트엔드가 즉각 식별할 수 있도록 아래 단일화된 객체를 반환합니다.
+AI가 생성한 도시계획 대안은 입력 데이터와 프롬프트를 기반으로 생성된 참고 결과입니다.
 
-```json
-{
-  "message": "요청 값 또는 계획안 타입이 올바르지 않습니다.",
-  "timestamp": "2026-07-15T11:04:04",
-  "error": "Bad Request",
-  "path": "/api/city-analyses",
-  "status": 400
-}
+실제 행정 정책을 결정하기 위해서는 전문가 검토, 현장 조사, 법률 검토와 주민 의견 수렴이 추가로 필요합니다.
 
-```
+### 4. 분석 지표 제한
 
-* **400 Bad Request:** 데이터 포맷 검증 실패, 범위 초과 또는 경로 유효성 위반 (status: 400)
-* **404 Not Found:** 존재하지 않는 UUID 분석 데이터 요청 (status: 404)
-* **500 Internal Server Error:** 시스템 내부 에러 또는 제어되지 않은 연동 실패 (status: 500)
+현재 프로젝트에서는 인구, 건축물, 교통량, 버스정류소, 도로 소통정보를 중심으로 분석합니다.
+
+예산, 환경, 재난, 부동산, 고용, 복지 등의 모든 도시계획 요소를 반영하지는 못합니다.
+
+### 5. API 의존성
+
+외부 공공데이터 API나 Gemini API에 장애가 발생하거나 호출 제한을 초과하면 일부 기능이 제한될 수 있습니다.
+
+### 6. 시뮬레이션 기능 제한
+
+현재는 도시의 현재 상태를 분석하고 대안을 제시하는 데 초점을 맞추고 있습니다.
+
+특정 정책을 실행했을 때 인구, 교통량, 예산 등이 실제로 어떻게 변하는지 장기적으로 예측하는 정밀 시뮬레이션 기능은 제공하지 않습니다.
 
 ---
 
-## 3. Java - TypeScript 데이터 타입 동기화 계약
+## 🔭 향후 발전 방향
 
-### 3.1 Java Record 구조
+* 전국 행정구역 데이터 지원
+* 환경, 안전, 복지, 경제 데이터 추가
+* 실시간 교통 데이터 연동 확대
+* 도시계획 대안별 비용 분석
+* 정책 시행 전후 비교 시뮬레이션
+* AI 분석 결과에 사용된 데이터 출처 표시
+* 사용자별 분석 결과 저장
+* 분석 보고서 PDF 다운로드
+* 도시 간 비교 기능
+* 관리자용 데이터 관리 기능
 
-```java
-public record UrbanScores(
-    int overall,
-    int transport,
-    int environment,
-    int economy,
-    int living
-) {}
+---
 
-public record UrbanInsight(
-    String category,
-    String severity,
-    String message
-) {}
+## 📁 프로젝트 구조
 
-public record UrbanPlan(
-    String type,
-    String title,
-    String description,
-    List<String> actions,
-    List<String> expectedEffects,
-    int priority
-) {}
-
-public record UrbanAiResult(
-    String summary,
-    List<UrbanInsight> insights,
-    List<UrbanPlan> plans
-) {}
-
-```
-
-### 3.2 TypeScript 타입
-
-```typescript
-export type PlanType = "BALANCED" | "ECO_FOCUSED" | "COST_EFFECTIVE";
-
-export interface UrbanScores {
-  overall: number;
-  transport: number;
-  environment: number;
-  economy: number;
-  living: number;
-}
-
-export interface UrbanInsight {
-  category: "TRANSPORT" | "ENVIRONMENT" | "ECONOMY" | "LIVING";
-  severity: "HIGH" | "MEDIUM" | "LOW";
-  message: string;
-}
-
-export interface UrbanPlan {
-  type: PlanType;
-  title: string;
-  description: string;
-  actions: string[];
-  expectedEffects: string[];
-  priority: number;
-}
-
-export interface UrbanAnalysisResponse {
-  id: string; // UUID String
-  cityName: string;
-  districtName: string;
-  scores: UrbanScores;
-  summary: string;
-  insights: UrbanInsight[];
-  plans: UrbanPlan[];
-  createdAt: string;
-}
-
+```text
+IntelliPolis/
+├── backend/
+│   ├── src/
+│   │   ├── main/
+│   │   │   ├── java/
+│   │   │   └── resources/
+│   ├── data/
+│   │   └── raw/
+│   ├── build.gradle
+│   └── .env
+│
+├── frontend/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   └── services/
+│   ├── public/
+│   ├── package.json
+│   └── .env
+│
+├── docs/
+│   ├── design.md
+│   ├── api.md
+│   └── demo.md
+│
+└── README.md
 ```
 
 ---
 
-## 4. AI 연동 및 예외 처리 (Fallback) 메커니즘
+## 📚 상세 문서
 
-* **자동 에러 포착:** `UrbanAiService`는 외부 API 요청 도중 발생하는 예외(`WebClientResponseException`, 401 Unauthorized 등)를 전역적으로 포착(catch)합니다.
-* **Fallback 동작:** 에러 포착 시 사전에 약속된 정적 템플릿 응답(아래 예시)을 반환하여 시스템 가용성을 유지합니다.
-* **예시 응답:** `"이 계획안은 현재 지표를 바탕으로 필요 시설: 환승거점 1개, 쉼터·공원 2개, 의료거점 1개를 목표로 하는 규칙 기반 대안입니다."`
+자세한 설계와 API 명세는 `docs` 폴더에서 관리합니다.
+
+* `docs/design.md`: 시스템 구조와 설계 내용
+* `docs/api.md`: REST API 요청 및 응답 명세
+* `docs/demo.md`: 발표 시연 순서와 테스트 시나리오
+
+---
+
+## 📢 프로젝트 핵심 문장
+
+> **IntelliPolis는 공공데이터의 정량 분석과 Spring AI의 정성 분석을 결합하여 도시의 문제점을 발견하고, 사용자에게 다양한 도시계획 대안을 제공하는 AI 기반 의사결정 지원 플랫폼입니다.**
