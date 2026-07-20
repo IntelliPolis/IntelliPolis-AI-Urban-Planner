@@ -10,6 +10,10 @@ IntelliPolis는 AI가 도시계획을 대신하는 서비스가 아니라, **데
 
 ---
 
+## 시연
+<img width="800" height="450" alt="ezCam_20260720104415 (4)" src="https://github.com/user-attachments/assets/44640ebf-1da0-4532-9b5a-d98e0bb98d77" />
+
+
 ## 📌 우리 서비스는 누구의 어떤 문제를 해결하는가?
 
 ### 주요 사용자
